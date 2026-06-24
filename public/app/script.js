@@ -3618,7 +3618,28 @@ function initCollapsibleSections() {
       }
     } catch (_) {}
 
+    function setSplit(on) {
+      if (!content) return;
+      content.classList.toggle("split-active", !!on);
+      splitBtn?.classList.toggle("active", !!on);
+      try { localStorage.setItem(splitKey, on ? "1" : "0"); } catch (_) {}
+      sections.forEach((s) => {
+        const isSplitTarget =
+          s.id === "section-graphs" || s.id === "section-race-story";
+        s.classList.toggle("split-visible", !!on && isSplitTarget);
+      });
+      if (on) {
+        // Charts need to relayout into half-width columns.
+        setTimeout(() => {
+          try {
+            Object.values(charts || {}).forEach((c) => c?.resize?.());
+          } catch (_) {}
+        }, 60);
+      }
+    }
+
     function activateSection(targetId) {
+      if (content?.classList.contains("split-active")) setSplit(false);
       sections.forEach((section) => {
         section.classList.toggle("active", section.id === targetId);
       });
@@ -3640,11 +3661,16 @@ function initCollapsibleSections() {
       });
     });
 
+    splitBtn?.addEventListener("click", () => {
+      const next = !content?.classList.contains("split-active");
+      setSplit(next);
+    });
+
     if (tabContainer) {
-      enableDragReorder(tabContainer, ".section-tab", {
+      enableDragReorder(tabContainer, ".section-tab[data-target]", {
         onReorder: () => {
           const order = Array.from(
-            tabContainer.querySelectorAll(".section-tab"),
+            tabContainer.querySelectorAll(".section-tab[data-target]"),
           ).map((t) => t.dataset.target);
           localStorage.setItem(orderKey, JSON.stringify(order));
         },
@@ -3656,6 +3682,10 @@ function initCollapsibleSections() {
         ? storedActive
         : "section-standings";
     activateSection(defaultSection);
+
+    let splitInitial = false;
+    try { splitInitial = localStorage.getItem(splitKey) === "1"; } catch (_) {}
+    if (splitInitial) setSplit(true);
   } catch (err) {
     console.warn("initCollapsibleSections failed", err);
   }
