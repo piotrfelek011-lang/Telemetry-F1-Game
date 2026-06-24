@@ -3851,7 +3851,7 @@ function renderPositionChart(rs) {
         },
       },
       scales: {
-        x: { title: { display: true, text: "Lap" } },
+        x: { title: { display: true, text: "Lap" }, min: 0, ticks: { stepSize: 1, precision: 0 } },
         y: {
           reverse: true,
           min: 1,
