@@ -1357,17 +1357,8 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   outline: 1px dashed var(--accent-red, #e10600);
   outline-offset: -2px;
 }
-.reorderable-rows tr { cursor: grab; }
-.reorderable-rows tr:active { cursor: grabbing; }
-.reorderable-rows tr td:first-child::before {
-  content: "⋮⋮";
-  display: inline-block;
-  margin-right: 6px;
-  color: rgba(255,255,255,0.25);
-  font-size: 0.9em;
-  letter-spacing: -1px;
-  vertical-align: middle;
-}
+/* Row-level drag affordances retired (drivers no longer reorderable). */
+
 
 /* ============================================================
    Consistency Rating pill in Session Info
