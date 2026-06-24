@@ -3699,14 +3699,12 @@ function enableDragReorder(container, itemSelector, opts = {}) {
   });
 }
 
-// Apply drag-reorder to a freshly rendered table body. Call after innerHTML
-// updates that rebuild the rows.
-function enableTableRowReorder(tableSelector) {
-  document.querySelectorAll(tableSelector + " tbody").forEach((tbody) => {
-    enableDragReorder(tbody, "tr");
-    tbody.classList.add("reorderable-rows");
-  });
+// Drag-to-reorder for table rows is intentionally disabled — kept as a no-op
+// so existing call sites don't need to change.
+function enableTableRowReorder(_tableSelector) {
+  /* no-op */
 }
+
 
 
 // ============================================================
