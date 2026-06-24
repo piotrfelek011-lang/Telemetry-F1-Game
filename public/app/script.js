@@ -535,7 +535,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       team: entry.team || "",
       final: entry["final-classification"]?.position,
       history: (ph["driver-position-history"] || [])
-        .filter((p) => p["lap-number"] >= 1)
+        .filter((p) => p["lap-number"] >= 0)
         .map((p) => ({ lap: p["lap-number"], position: p.position })),
     });
   });
