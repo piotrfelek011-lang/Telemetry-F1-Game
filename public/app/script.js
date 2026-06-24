@@ -3645,6 +3645,15 @@ function initCollapsibleSections() {
         };
         setTimeout(replay, 40);
         setTimeout(replay, 250);
+      } else {
+        // Leaving split: re-render so charts fit the now-wide single column.
+        setTimeout(() => {
+          try {
+            Object.values(charts || {}).forEach((c) => { try { c?.destroy?.(); } catch (_) {} });
+            for (const k of Object.keys(charts || {})) delete charts[k];
+            if (typeof currentData !== "undefined" && currentData) renderContent();
+          } catch (_) {}
+        }, 40);
       }
     }
 
