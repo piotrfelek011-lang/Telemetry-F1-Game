@@ -1594,6 +1594,8 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   flex-wrap: wrap;
   overflow-x: visible;
   background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+}
 .sticky-tabs::-webkit-scrollbar { height: 4px; }
 .sticky-tabs::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 .sticky-tabs .section-tab {
