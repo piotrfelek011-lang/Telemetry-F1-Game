@@ -1820,3 +1820,8 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   gap: 6px;
 }
 .collapsible-content.split-active .rs-canvas-wrap { min-width: 0; }
+
+.collapsible-content.split-active .race-story-empty {
+  margin: 0; padding: 32px 18px; text-align: center;
+  font-size: 0.85rem;
+}
