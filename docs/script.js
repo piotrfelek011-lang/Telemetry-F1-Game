@@ -3220,37 +3220,42 @@ function renderStandingsTable() {
 
   const teamsAssigned = getDriverTeams(); // This is used for constructor standings
 
-  let html = `<div class="table-responsive"><table class="table table-sm table-dark table-striped standings-table" style="font-size: 0.7rem;"><thead><tr><th style="padding: 12px 4px; width: 40px;" class="text-center">#</th><th style="padding: 12px 4px; width: 180px;" class="text-start">Driver</th>`;
+  let html = `<div class="table-responsive standings-wrap"><table class="standings-table standings-v2"><thead><tr><th class="col-rank">#</th><th class="col-driver">Driver</th>`;
 
   scoringSessions.forEach((s, i) => {
     const flag = getFlagHtml(s, i + 1);
     const typeLabel = (s.category || "").toLowerCase() === "sprint" ? "S" : "R";
-    html += `<th title="${s.track_name} - ${s.category}" class="text-center" style="padding: 12px 2px;">${flag}<br><small style="font-size: 0.6em; opacity: 0.8;">${typeLabel}</small></th>`;
+    const code = (s.track_code || s.track_name || "").toString().slice(0, 3).toUpperCase();
+    html += `<th title="${s.track_name} - ${s.category}" class="col-race"><div class="race-head"><span class="race-flag">${flag}</span><span class="race-code">${code}</span><span class="race-type race-type-${typeLabel.toLowerCase()}">${typeLabel}</span></div></th>`;
   });
 
-  html += `<th class="text-end" style="padding: 12px 4px;">Pts</th><th class="text-end" style="padding: 12px 4px;">Gap</th></tr></thead><tbody>`;
+  html += `<th class="col-pts">Pts</th><th class="col-gap">Gap</th></tr></thead><tbody>`;
 
   driverNames.forEach((name, idx) => {
     const d = driversMap[name];
     const team = teamsAssigned[name] || "Unassigned";
     const teamColor = TEAM_COLORS[team] || "#444";
-    html += `<tr class="standings-row"><td class="text-center" style="padding: 10px 2px;">${idx + 1}</td><td class="text-start team-accent-cell" style="padding: 10px 4px; white-space: nowrap; border-left: 4px solid ${teamColor} !important;"><strong>${name.toUpperCase()}</strong><span class="team-name-sub">${team}</span></td>`;
+    const leaderClass = idx === 0 ? " is-leader" : "";
+    html += `<tr class="standings-row${leaderClass}"><td class="col-rank rank-cell"><span class="rank-num">${idx + 1}</span></td><td class="col-driver driver-cell" style="--team-color:${teamColor};"><span class="driver-name">${name.toUpperCase()}</span><span class="driver-team">${team}</span></td>`;
 
     // Ensure the driver exists in the row even if they missed a race
     scoringSessions.forEach((s) => {
       const pos = d.positions[s.id || s.created_at];
-      html += `<td class="text-center pos-${pos}" style="padding: 10px 2px;">${pos || "-"}</td>`;
+      const posNum = parseInt(pos);
+      const pillClass = posNum >= 1 && posNum <= 3 ? ` pos-${posNum}` : (pos ? "" : " is-empty");
+      html += `<td class="pos-cell"><span class="pos-pill${pillClass}">${pos || "–"}</span></td>`;
     });
 
     // Calculate gap to the driver ahead
     const gap =
       idx === 0
-        ? "-"
-        : `-${Math.abs(driversMap[driverNames[idx - 1]].points - d.points)}`;
+        ? "—"
+        : `−${Math.abs(driversMap[driverNames[idx - 1]].points - d.points)}`;
 
-    html += `<td class="text-end" style="padding: 10px 4px;"><strong>${d.points}</strong></td>`;
-    html += `<td class="text-end" style="color: #aaa; font-size: 0.85em; padding: 10px 4px;">${gap}</td></tr>`;
+    html += `<td class="col-pts pts-cell">${d.points}</td>`;
+    html += `<td class="col-gap gap-cell">${gap}</td></tr>`;
   });
+
 
   html += `</tbody></table></div>`;
   // Build constructor standings based on assigned teams
@@ -3699,14 +3704,12 @@ function enableDragReorder(container, itemSelector, opts = {}) {
   });
 }
 
-// Apply drag-reorder to a freshly rendered table body. Call after innerHTML
-// updates that rebuild the rows.
-function enableTableRowReorder(tableSelector) {
-  document.querySelectorAll(tableSelector + " tbody").forEach((tbody) => {
-    enableDragReorder(tbody, "tr");
-    tbody.classList.add("reorderable-rows");
-  });
+// Drag-to-reorder for table rows is intentionally disabled — kept as a no-op
+// so existing call sites don't need to change.
+function enableTableRowReorder(_tableSelector) {
+  /* no-op */
 }
+
 
 
 // ============================================================
