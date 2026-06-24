@@ -512,7 +512,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   if (!playerPos && !classification_data?.length) return null;
 
   const position_history = (playerPos?.["driver-position-history"] || [])
-    .filter((p) => p["lap-number"] >= 1)
+    .filter((p) => p["lap-number"] >= 0)
     .map((p) => ({ lap: p["lap-number"], position: p.position }));
 
   // Podium = top 3 by final-classification.position
@@ -535,7 +535,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       team: entry.team || "",
       final: entry["final-classification"]?.position,
       history: (ph["driver-position-history"] || [])
-        .filter((p) => p["lap-number"] >= 1)
+        .filter((p) => p["lap-number"] >= 0)
         .map((p) => ({ lap: p["lap-number"], position: p.position })),
     });
   });
@@ -3594,10 +3594,15 @@ function secondsToTimeString(seconds) {
 function initCollapsibleSections() {
   try {
     const tabContainer = document.querySelector(".collapsible-tabs");
-    const tabs = Array.from(document.querySelectorAll(".section-tab"));
+    const tabs = Array.from(
+      document.querySelectorAll(".section-tab[data-target]"),
+    );
     const sections = Array.from(
       document.querySelectorAll(".collapsible-section"),
     );
+    const splitBtn = document.getElementById("splitViewToggle");
+    const content = document.querySelector(".collapsible-content");
+    const splitKey = "split_view_active";
     const activeKey = "active_collapsible_section";
     const orderKey = "collapsible_tab_order_v1";
     const storedActive = localStorage.getItem(activeKey);
@@ -3613,7 +3618,34 @@ function initCollapsibleSections() {
       }
     } catch (_) {}
 
+    function setSplit(on) {
+      if (!content) return;
+      content.classList.toggle("split-active", !!on);
+      splitBtn?.classList.toggle("active", !!on);
+      try { localStorage.setItem(splitKey, on ? "1" : "0"); } catch (_) {}
+      sections.forEach((s) => {
+        const isSplitTarget =
+          s.id === "section-graphs" || s.id === "section-race-story";
+        s.classList.toggle("split-visible", !!on && isSplitTarget);
+      });
+      if (on) {
+        // Auto-collapse the sidebar to free up horizontal room.
+        const shell = document.getElementById("appShell");
+        if (shell && !shell.classList.contains("sidebar-collapsed")) {
+          shell.classList.add("sidebar-collapsed");
+          try { localStorage.setItem("sidebarCollapsed", "1"); } catch (_) {}
+        }
+        // Charts need to relayout into half-width columns.
+        setTimeout(() => {
+          try {
+            Object.values(charts || {}).forEach((c) => c?.resize?.());
+          } catch (_) {}
+        }, 60);
+      }
+    }
+
     function activateSection(targetId) {
+      if (content?.classList.contains("split-active")) setSplit(false);
       sections.forEach((section) => {
         section.classList.toggle("active", section.id === targetId);
       });
@@ -3635,11 +3667,16 @@ function initCollapsibleSections() {
       });
     });
 
+    splitBtn?.addEventListener("click", () => {
+      const next = !content?.classList.contains("split-active");
+      setSplit(next);
+    });
+
     if (tabContainer) {
-      enableDragReorder(tabContainer, ".section-tab", {
+      enableDragReorder(tabContainer, ".section-tab[data-target]", {
         onReorder: () => {
           const order = Array.from(
-            tabContainer.querySelectorAll(".section-tab"),
+            tabContainer.querySelectorAll(".section-tab[data-target]"),
           ).map((t) => t.dataset.target);
           localStorage.setItem(orderKey, JSON.stringify(order));
         },
@@ -3651,6 +3688,10 @@ function initCollapsibleSections() {
         ? storedActive
         : "section-standings";
     activateSection(defaultSection);
+
+    let splitInitial = false;
+    try { splitInitial = localStorage.getItem(splitKey) === "1"; } catch (_) {}
+    if (splitInitial) setSplit(true);
   } catch (err) {
     console.warn("initCollapsibleSections failed", err);
   }
@@ -3748,6 +3789,23 @@ function renderRaceStory() {
   empty.style.display = "none";
   wrap.style.display = "block";
 
+  // Backfill lap 0 (grid position) for sessions saved before lap-0 support.
+  const startPos =
+    currentData.starting_position ?? currentData.starting_pos ?? null;
+  if (
+    startPos &&
+    rs.position_history.length &&
+    rs.position_history[0].lap !== 0
+  ) {
+    rs.position_history.unshift({ lap: 0, position: Number(startPos) });
+  }
+  (rs.podium || []).forEach((p) => {
+    if (p.history?.length && p.history[0].lap !== 0 && p.history[0].lap === 1) {
+      // Keep podium aligned visually; reuse lap-1 position as lap-0 fallback.
+      p.history.unshift({ lap: 0, position: p.history[0].position });
+    }
+  });
+
   // Headline
   const start = rs.position_history[0]?.position;
   const end = rs.position_history[rs.position_history.length - 1]?.position;
@@ -3834,7 +3892,7 @@ function renderPositionChart(rs) {
         },
       },
       scales: {
-        x: { title: { display: true, text: "Lap" } },
+        x: { title: { display: true, text: "Lap" }, min: 0, ticks: { stepSize: 1, precision: 0 } },
         y: {
           reverse: true,
           min: 1,
