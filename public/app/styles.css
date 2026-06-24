@@ -1742,3 +1742,35 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 
 /* Tighten old sidebar season-summary (no longer used there) */
 .sessions-block #seasonSummaryCards { display: none; }
+
+/* ---------- Split-view (Graphs + Race Story side-by-side) ---------- */
+.split-toggle {
+  margin-left: auto;
+}
+.split-toggle.active {
+  background: var(--f1-red) !important;
+  color: #fff !important;
+  border-color: var(--f1-red) !important;
+}
+.collapsible-content.split-active {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.collapsible-content.split-active .collapsible-section { display: none; }
+.collapsible-content.split-active .collapsible-section.split-visible {
+  display: block;
+  opacity: 1;
+  max-height: none;
+  transform: none;
+  margin-top: 14px;
+}
+.collapsible-content.split-active .charts-grid {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 1100px) {
+  .collapsible-content.split-active {
+    grid-template-columns: 1fr;
+  }
+}
