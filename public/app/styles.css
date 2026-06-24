@@ -1791,3 +1791,32 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   .app-shell { height: auto; min-height: 100vh; }
   .sidebar, .main-pane { height: auto; overflow: visible; }
 }
+
+/* ---------- Split-view tighter sizing ---------- */
+.collapsible-content.split-active .collapsible-section.split-visible {
+  min-width: 0;
+  overflow: hidden;
+}
+.collapsible-content.split-active .section-body,
+.collapsible-content.split-active .section-header {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.collapsible-content.split-active .charts-grid {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.collapsible-content.split-active .chart-container,
+.collapsible-content.split-active .chart-container.full-width {
+  height: 300px;
+  padding: 14px;
+}
+.collapsible-content.split-active .chart-container.auto-height,
+.collapsible-content.split-active .chart-container.full-width.auto-height {
+  height: auto;
+}
+.collapsible-content.split-active .race-story-headline {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.collapsible-content.split-active .rs-canvas-wrap { min-width: 0; }
