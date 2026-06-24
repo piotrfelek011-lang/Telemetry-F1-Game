@@ -1753,3 +1753,170 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 .main-pane > .season-stats-host,
 .main-pane > .sticky-tabs { flex-shrink: 0; }
 
+
+/* ============================================================
+   Standings v2 — "Podium pills" layout
+   ============================================================ */
+.standings-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: #121214; }
+.standings-table.standings-v2 {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  margin: 0;
+  color: rgba(255,255,255,0.72);
+  background: transparent;
+}
+.standings-v2 thead tr {
+  background: #151517;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.standings-v2 th {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: rgba(255,255,255,0.42);
+  padding: 12px 6px;
+  text-align: center;
+  border: 0 !important;
+}
+.standings-v2 th.col-rank { width: 38px; }
+.standings-v2 th.col-driver { width: 160px; text-align: left; padding-left: 14px; }
+.standings-v2 th.col-pts { width: 58px; text-align: right; color: #fff; padding-right: 14px; }
+.standings-v2 th.col-gap { width: 56px; text-align: right; padding-right: 14px; }
+.standings-v2 th.col-race { padding: 10px 2px; }
+
+.race-head { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; }
+.race-head .race-flag { display: inline-flex; line-height: 0; }
+.race-head .race-flag img,
+.race-head .race-flag svg { width: 16px; height: 11px; border-radius: 1px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
+.race-head .race-code { font-family: var(--font-mono, monospace); font-size: 0.55rem; letter-spacing: 0.05em; color: rgba(255,255,255,0.5); }
+.race-head .race-type {
+  font-size: 0.5rem; font-weight: 800; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.45);
+  padding: 0 3px; border-radius: 3px;
+}
+.race-head .race-type-s { color: #ffb347; background: rgba(255,179,71,0.10); }
+
+.standings-v2 tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  background: transparent;
+  transition: background 0.15s;
+}
+.standings-v2 tbody tr:nth-child(even) { background: transparent; }
+.standings-v2 tbody tr:hover { background: rgba(255,255,255,0.03) !important; }
+.standings-v2 td { border: 0 !important; padding: 8px 2px; vertical-align: middle; }
+
+.standings-v2 .rank-cell {
+  position: relative;
+  text-align: center;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  padding-left: 10px;
+}
+.standings-v2 tr.is-leader .rank-cell { color: #fff; }
+.standings-v2 tr.is-leader .rank-cell::before {
+  content: ""; position: absolute;
+  left: 0; top: 22%; bottom: 22%; width: 2px;
+  background: var(--f1-red); box-shadow: 0 0 8px var(--f1-red);
+  border-radius: 2px;
+}
+
+.standings-v2 .driver-cell {
+  text-align: left !important;
+  white-space: nowrap;
+  padding: 8px 10px 8px 14px;
+  border-left: 2px solid var(--team-color, #444) !important;
+  line-height: 1.1;
+}
+.standings-v2 .driver-name {
+  display: block;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-size: 0.82rem;
+  color: #fff;
+}
+.standings-v2 .driver-team {
+  display: block;
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--team-color, rgba(255,255,255,0.45));
+  filter: brightness(1.15);
+  margin-top: 2px;
+  font-weight: 700;
+}
+
+.standings-v2 .pos-cell { padding: 6px 2px; text-align: center; }
+.standings-v2 .pos-pill {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  min-width: 26px; height: 26px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.72);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  line-height: 1;
+}
+.standings-v2 .pos-pill.is-empty {
+  color: rgba(255,255,255,0.22);
+  background: transparent;
+  border-color: transparent;
+}
+.standings-v2 .pos-pill.pos-1 {
+  color: #f5d547;
+  background: rgba(245,213,71,0.10);
+  border-color: rgba(245,213,71,0.40);
+  font-weight: 800;
+  box-shadow: inset 0 0 8px rgba(245,213,71,0.10), 0 0 8px rgba(245,213,71,0.08);
+}
+.standings-v2 .pos-pill.pos-2 {
+  color: #d8dde6;
+  background: rgba(216,221,230,0.08);
+  border-color: rgba(216,221,230,0.32);
+  font-weight: 700;
+}
+.standings-v2 .pos-pill.pos-3 {
+  color: #e89a5a;
+  background: rgba(232,154,90,0.10);
+  border-color: rgba(232,154,90,0.36);
+  font-weight: 700;
+}
+
+.standings-v2 .pts-cell {
+  text-align: right;
+  padding-right: 14px;
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.standings-v2 .gap-cell {
+  text-align: right;
+  padding-right: 14px;
+  font-family: var(--font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  color: rgba(255,255,255,0.42);
+  font-size: 0.72rem;
+}
+.standings-v2 tr.is-leader .gap-cell { color: rgba(255,255,255,0.28); }
+
+/* Strip the legacy #standings-container chrome so the new card stands alone */
+#standings-container .standings-wrap { margin-top: 4px; }
+
+/* Disable old pos-N td gradient overrides inside the new standings table */
+.standings-v2 td.pos-1,
+.standings-v2 td.pos-2,
+.standings-v2 td.pos-3 {
+  background: none !important;
+  border-left: 0 !important;
+  color: inherit !important;
+}
