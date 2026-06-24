@@ -1565,7 +1565,20 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 .main-pane {
   display: flex; flex-direction: column;
   min-width: 0; /* avoid grid overflow */
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
+.main-pane::-webkit-scrollbar { width: 10px; }
+.main-pane::-webkit-scrollbar-track { background: transparent; }
+.main-pane::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.main-pane::-webkit-scrollbar-thumb:hover { background: var(--f1-red); background-clip: padding-box; border: 2px solid transparent; }
 .compact-header {
   position: static;
   padding: 16px 24px 14px;
