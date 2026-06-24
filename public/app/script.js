@@ -3629,6 +3629,12 @@ function initCollapsibleSections() {
         s.classList.toggle("split-visible", !!on && isSplitTarget);
       });
       if (on) {
+        // Auto-collapse the sidebar to free up horizontal room.
+        const shell = document.getElementById("appShell");
+        if (shell && !shell.classList.contains("sidebar-collapsed")) {
+          shell.classList.add("sidebar-collapsed");
+          try { localStorage.setItem("sidebarCollapsed", "1"); } catch (_) {}
+        }
         // Charts need to relayout into half-width columns.
         setTimeout(() => {
           try {
