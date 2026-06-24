@@ -3600,9 +3600,6 @@ function initCollapsibleSections() {
     const sections = Array.from(
       document.querySelectorAll(".collapsible-section"),
     );
-    const splitBtn = document.getElementById("splitViewToggle");
-    const content = document.querySelector(".collapsible-content");
-    const splitKey = "split_view_active";
     const activeKey = "active_collapsible_section";
     const orderKey = "collapsible_tab_order_v1";
     const storedActive = localStorage.getItem(activeKey);
@@ -3618,54 +3615,7 @@ function initCollapsibleSections() {
       }
     } catch (_) {}
 
-    function setSplit(on) {
-      if (!content) return;
-      content.classList.toggle("split-active", !!on);
-      splitBtn?.classList.toggle("active", !!on);
-      try { localStorage.setItem(splitKey, on ? "1" : "0"); } catch (_) {}
-      sections.forEach((s) => {
-        const isSplitTarget =
-          s.id === "section-graphs" || s.id === "section-race-story";
-        s.classList.toggle("split-visible", !!on && isSplitTarget);
-      });
-      if (on) {
-        // Auto-collapse the sidebar to free up horizontal room.
-        const shell = document.getElementById("appShell");
-        if (shell && !shell.classList.contains("sidebar-collapsed")) {
-          shell.classList.add("sidebar-collapsed");
-          try { localStorage.setItem("sidebarCollapsed", "1"); } catch (_) {}
-        }
-        // Charts were sized while their panel was display:none — full re-render.
-        const replay = () => {
-          try {
-            Object.values(charts || {}).forEach((c) => { try { c?.destroy?.(); } catch (_) {} });
-            for (const k of Object.keys(charts || {})) delete charts[k];
-          } catch (_) {}
-          try { if (typeof currentData !== "undefined" && currentData) renderContent(); } catch (_) {}
-        };
-        setTimeout(replay, 40);
-        setTimeout(replay, 250);
-      } else {
-        // Leaving split: re-render so charts fit the now-wide single column.
-        setTimeout(() => {
-          try {
-            Object.values(charts || {}).forEach((c) => { try { c?.destroy?.(); } catch (_) {} });
-            for (const k of Object.keys(charts || {})) delete charts[k];
-            if (typeof currentData !== "undefined" && currentData) renderContent();
-          } catch (_) {}
-        }, 40);
-      }
-    }
-
     function activateSection(targetId) {
-      // In split mode, ignore regular tab clicks so the split layout persists.
-      if (content?.classList.contains("split-active")) {
-        tabs.forEach((tab) => {
-          tab.classList.toggle("active", tab.dataset.target === targetId);
-        });
-        localStorage.setItem(activeKey, targetId);
-        return;
-      }
       sections.forEach((section) => {
         section.classList.toggle("active", section.id === targetId);
       });
@@ -3687,11 +3637,6 @@ function initCollapsibleSections() {
       });
     });
 
-    splitBtn?.addEventListener("click", () => {
-      const next = !content?.classList.contains("split-active");
-      setSplit(next);
-    });
-
     if (tabContainer) {
       enableDragReorder(tabContainer, ".section-tab[data-target]", {
         onReorder: () => {
@@ -3708,10 +3653,6 @@ function initCollapsibleSections() {
         ? storedActive
         : "section-standings";
     activateSection(defaultSection);
-
-    let splitInitial = false;
-    try { splitInitial = localStorage.getItem(splitKey) === "1"; } catch (_) {}
-    if (splitInitial) setSplit(true);
   } catch (err) {
     console.warn("initCollapsibleSections failed", err);
   }
