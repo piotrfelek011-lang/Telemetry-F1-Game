@@ -1435,13 +1435,10 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 .sidebar {
-  position: sticky;
-  top: 0;
-  align-self: start;
   height: 100vh;
   overflow-y: auto;
   background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
@@ -1514,8 +1511,36 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 }
 
 /* Vertical session list inside sidebar */
+.sessions-block {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 .session-list {
   display: flex; flex-direction: column; gap: 8px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--f1-red) transparent;
+}
+.session-list::-webkit-scrollbar { width: 8px; }
+.session-list::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+}
+.session-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--f1-red), #7a0400);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.session-list::-webkit-scrollbar-thumb:hover {
+  background: var(--f1-red);
+  background-clip: padding-box;
+  border: 2px solid transparent;
 }
 .session-list .session-card {
   padding: 10px 12px;
@@ -1540,7 +1565,20 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 .main-pane {
   display: flex; flex-direction: column;
   min-width: 0; /* avoid grid overflow */
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
+.main-pane::-webkit-scrollbar { width: 10px; }
+.main-pane::-webkit-scrollbar-track { background: transparent; }
+.main-pane::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.main-pane::-webkit-scrollbar-thumb:hover { background: var(--f1-red); background-clip: padding-box; border: 2px solid transparent; }
 .compact-header {
   position: static;
   padding: 16px 24px 14px;
@@ -1714,3 +1752,44 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 
 /* Tighten old sidebar season-summary (no longer used there) */
 .sessions-block #seasonSummaryCards { display: none; }
+
+/* ---------- Split-view (Graphs + Race Story side-by-side) ---------- */
+.split-toggle {
+  margin-left: auto;
+}
+.split-toggle.active {
+  background: var(--f1-red) !important;
+  color: #fff !important;
+  border-color: var(--f1-red) !important;
+}
+.collapsible-content.split-active {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.collapsible-content.split-active .collapsible-section { display: none; }
+.collapsible-content.split-active .collapsible-section.split-visible {
+  display: block;
+  opacity: 1;
+  max-height: none;
+  transform: none;
+  margin-top: 14px;
+}
+.collapsible-content.split-active .charts-grid {
+  grid-template-columns: 1fr;
+}
+@media (max-width: 1100px) {
+  .collapsible-content.split-active {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Hide redundant session-info card stack when in split view */
+.collapsible-content.split-active #sessionInfo { display: none; }
+
+/* Mobile: revert to natural page scroll (single column stack) */
+@media (max-width: 980px) {
+  .app-shell { height: auto; min-height: 100vh; }
+  .sidebar, .main-pane { height: auto; overflow: visible; }
+}
