@@ -1751,77 +1751,14 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 /* Tighten old sidebar season-summary (no longer used there) */
 .sessions-block #seasonSummaryCards { display: none; }
 
-/* ---------- Split-view (Graphs + Race Story side-by-side) ---------- */
-.split-toggle {
-  margin-left: auto;
-}
-.split-toggle.active {
-  background: var(--f1-red) !important;
-  color: #fff !important;
-  border-color: var(--f1-red) !important;
-}
-.collapsible-content.split-active {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-}
-.collapsible-content.split-active .collapsible-section { display: none; }
-.collapsible-content.split-active .collapsible-section.split-visible {
-  display: block;
-  opacity: 1;
-  max-height: none;
-  transform: none;
-  margin-top: 14px;
-}
-.collapsible-content.split-active .charts-grid {
-  grid-template-columns: 1fr;
-}
-@media (max-width: 1100px) {
-  .collapsible-content.split-active {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Hide redundant session-info card stack when in split view */
-.collapsible-content.split-active #sessionInfo { display: none; }
-
 /* Mobile: revert to natural page scroll (single column stack) */
 @media (max-width: 980px) {
   .app-shell { height: auto; min-height: 100vh; }
   .sidebar, .main-pane { height: auto; overflow: visible; }
 }
 
-/* ---------- Split-view tighter sizing ---------- */
-.collapsible-content.split-active .collapsible-section.split-visible {
-  min-width: 0;
-  overflow: hidden;
-}
-.collapsible-content.split-active .section-body,
-.collapsible-content.split-active .section-header {
-  padding-left: 16px;
-  padding-right: 16px;
-}
-.collapsible-content.split-active .charts-grid {
-  gap: 14px;
-  margin-bottom: 18px;
-}
-.collapsible-content.split-active .chart-container,
-.collapsible-content.split-active .chart-container.full-width {
-  height: 300px;
-  padding: 14px;
-}
-.collapsible-content.split-active .chart-container.auto-height,
-.collapsible-content.split-active .chart-container.full-width.auto-height {
-  height: auto;
-}
-.collapsible-content.split-active .race-story-headline {
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.collapsible-content.split-active .rs-canvas-wrap { min-width: 0; }
+/* Header rows must not shrink inside the flex column main pane */
+.main-pane > .compact-header,
+.main-pane > .season-stats-host,
+.main-pane > .sticky-tabs { flex-shrink: 0; }
 
-.collapsible-content.split-active .race-story-empty {
-  margin: 0; padding: 32px 18px; text-align: center;
-  font-size: 0.85rem;
-}
