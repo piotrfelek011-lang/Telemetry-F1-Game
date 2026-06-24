@@ -3748,6 +3748,23 @@ function renderRaceStory() {
   empty.style.display = "none";
   wrap.style.display = "block";
 
+  // Backfill lap 0 (grid position) for sessions saved before lap-0 support.
+  const startPos =
+    currentData.starting_position ?? currentData.starting_pos ?? null;
+  if (
+    startPos &&
+    rs.position_history.length &&
+    rs.position_history[0].lap !== 0
+  ) {
+    rs.position_history.unshift({ lap: 0, position: Number(startPos) });
+  }
+  (rs.podium || []).forEach((p) => {
+    if (p.history?.length && p.history[0].lap !== 0 && p.history[0].lap === 1) {
+      // Keep podium aligned visually; reuse lap-1 position as lap-0 fallback.
+      p.history.unshift({ lap: 0, position: p.history[0].position });
+    }
+  });
+
   // Headline
   const start = rs.position_history[0]?.position;
   const end = rs.position_history[rs.position_history.length - 1]?.position;
