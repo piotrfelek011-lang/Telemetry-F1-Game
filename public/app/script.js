@@ -512,7 +512,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   if (!playerPos && !classification_data?.length) return null;
 
   const position_history = (playerPos?.["driver-position-history"] || [])
-    .filter((p) => p["lap-number"] >= 1)
+    .filter((p) => p["lap-number"] >= 0)
     .map((p) => ({ lap: p["lap-number"], position: p.position }));
 
   // Podium = top 3 by final-classification.position
