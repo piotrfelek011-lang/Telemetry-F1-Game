@@ -3594,10 +3594,15 @@ function secondsToTimeString(seconds) {
 function initCollapsibleSections() {
   try {
     const tabContainer = document.querySelector(".collapsible-tabs");
-    const tabs = Array.from(document.querySelectorAll(".section-tab"));
+    const tabs = Array.from(
+      document.querySelectorAll(".section-tab[data-target]"),
+    );
     const sections = Array.from(
       document.querySelectorAll(".collapsible-section"),
     );
+    const splitBtn = document.getElementById("splitViewToggle");
+    const content = document.querySelector(".collapsible-content");
+    const splitKey = "split_view_active";
     const activeKey = "active_collapsible_section";
     const orderKey = "collapsible_tab_order_v1";
     const storedActive = localStorage.getItem(activeKey);
