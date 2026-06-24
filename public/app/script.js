@@ -3635,17 +3635,28 @@ function initCollapsibleSections() {
           shell.classList.add("sidebar-collapsed");
           try { localStorage.setItem("sidebarCollapsed", "1"); } catch (_) {}
         }
-        // Charts need to relayout into half-width columns.
-        setTimeout(() => {
+        // Charts were sized while their panel was display:none — full re-render.
+        const replay = () => {
           try {
-            Object.values(charts || {}).forEach((c) => c?.resize?.());
+            Object.values(charts || {}).forEach((c) => { try { c?.destroy?.(); } catch (_) {} });
+            for (const k of Object.keys(charts || {})) delete charts[k];
           } catch (_) {}
-        }, 60);
+          try { if (typeof currentData !== "undefined" && currentData) renderContent(); } catch (_) {}
+        };
+        setTimeout(replay, 40);
+        setTimeout(replay, 250);
       }
     }
 
     function activateSection(targetId) {
-      if (content?.classList.contains("split-active")) setSplit(false);
+      // In split mode, ignore regular tab clicks so the split layout persists.
+      if (content?.classList.contains("split-active")) {
+        tabs.forEach((tab) => {
+          tab.classList.toggle("active", tab.dataset.target === targetId);
+        });
+        localStorage.setItem(activeKey, targetId);
+        return;
+      }
       sections.forEach((section) => {
         section.classList.toggle("active", section.id === targetId);
       });
