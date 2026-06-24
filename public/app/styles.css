@@ -1593,11 +1593,7 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   gap: 8px;
   flex-wrap: wrap;
   overflow-x: visible;
-  background: linear-gradient(180deg, var(--bg-2) 92%, transparent);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
-}
+  background: var(--bg-2);
 .sticky-tabs::-webkit-scrollbar { height: 4px; }
 .sticky-tabs::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 .sticky-tabs .section-tab {
