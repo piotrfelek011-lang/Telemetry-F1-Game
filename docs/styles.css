@@ -1920,3 +1920,101 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   border-left: 0 !important;
   color: inherit !important;
 }
+
+/* ---- All-time Records tab ---- */
+.records-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 6px 2px 14px;
+}
+.records-block {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px 14px 10px;
+}
+.records-title {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #cfcfcf;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.records-title::before {
+  content: "";
+  width: 4px;
+  height: 14px;
+  background: var(--accent, #e10600);
+  border-radius: 2px;
+}
+.records-table th.rec-num,
+.records-table td.rec-num {
+  text-align: center;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.8rem;
+  width: 56px;
+  color: #ddd;
+}
+.records-table thead th {
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  color: #9aa;
+}
+.rec-title-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  background: linear-gradient(180deg, #ffd860, #d4a017);
+  border-radius: 6px;
+  vertical-align: middle;
+}
+.rec-empty {
+  text-align: center;
+  padding: 18px !important;
+  color: #888 !important;
+  font-style: italic;
+}
+.records-champs td {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+.rec-season {
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.rec-current {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(225, 6, 0, 0.18);
+  color: #ff7a73;
+  border: 1px solid rgba(225, 6, 0, 0.4);
+  border-radius: 6px;
+}
+.rec-champ-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.06);
+}
+.rec-footnote {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  color: #777;
+  font-style: italic;
+}
