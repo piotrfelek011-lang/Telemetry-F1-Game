@@ -3298,7 +3298,251 @@ function renderStandingsTable() {
   } catch (err) {
     console.error("Failed to render driver assignments", err);
   }
+  try {
+    renderRecordsTable();
+  } catch (err) {
+    console.error("Failed to render records", err);
+  }
 }
+
+// ------- All-time Records / Stats -------
+function getTeamsForSeason(season) {
+  try {
+    const raw = JSON.parse(localStorage.getItem("driverTeamsBySeason") || "{}");
+    return raw[String(season)] || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function computeSeasonStandings(season) {
+  const drivers = {};
+  const sessions = allSessions
+    .filter(
+      (s) =>
+        s.season === season &&
+        ((s.category || "").toLowerCase() === "race" ||
+          (s.category || "").toLowerCase() === "sprint"),
+    );
+  sessions.forEach((session) => {
+    if (!session.results) return;
+    session.results.forEach((res) => {
+      const name = res.name;
+      if (!drivers[name]) drivers[name] = { points: 0, wins: 0, podiums: 0, races: 0 };
+      const pos = parseInt(res.position);
+      const cat = (session.category || "").toLowerCase();
+      let pts = 0;
+      if (cat === "race") pts = [0, 25, 18, 15, 12, 10, 8, 6, 4, 2, 1][pos] || 0;
+      else if (cat === "sprint") pts = [0, 8, 7, 6, 5, 4, 3, 2, 1][pos] || 0;
+      drivers[name].points += pts;
+      drivers[name].races += 1;
+      if (cat === "race") {
+        if (pos === 1) drivers[name].wins += 1;
+        if (pos >= 1 && pos <= 3) drivers[name].podiums += 1;
+      }
+    });
+  });
+  return drivers;
+}
+
+function renderRecordsTable() {
+  const container = document.getElementById("records-container");
+  if (!container) return;
+  if (!allSessions || allSessions.length === 0) {
+    container.innerHTML = `<div class="empty-hint" style="padding:18px;color:#888;">No saved sessions yet — upload some races to build all-time records.</div>`;
+    return;
+  }
+
+  const seasons = Array.from(
+    new Set(allSessions.map((s) => s.season).filter((x) => x != null)),
+  ).sort((a, b) => a - b);
+
+  // Driver aggregates across all seasons
+  const driverAgg = {};
+  const teamAgg = {};
+  const driverChampions = {};
+  const constructorChampions = {};
+
+  seasons.forEach((season) => {
+    const standings = computeSeasonStandings(season);
+    const teams = getTeamsForSeason(season);
+
+    Object.entries(standings).forEach(([name, s]) => {
+      if (!driverAgg[name]) {
+        driverAgg[name] = { points: 0, wins: 0, podiums: 0, races: 0, titles: 0, seasons: new Set(), lastTeam: null };
+      }
+      driverAgg[name].points += s.points;
+      driverAgg[name].wins += s.wins;
+      driverAgg[name].podiums += s.podiums;
+      driverAgg[name].races += s.races;
+      driverAgg[name].seasons.add(season);
+      if (teams[name]) driverAgg[name].lastTeam = teams[name];
+    });
+
+    // Driver champion of season
+    const driverRanked = Object.entries(standings).sort((a, b) => b[1].points - a[1].points);
+    if (driverRanked.length && driverRanked[0][1].points > 0) {
+      const champ = driverRanked[0][0];
+      driverAgg[champ].titles += 1;
+      driverChampions[season] = champ;
+    }
+
+    // Constructor aggregates for this season
+    const teamSeason = {};
+    Object.entries(standings).forEach(([name, s]) => {
+      const team = teams[name] || "Unassigned";
+      if (!teamSeason[team]) teamSeason[team] = { points: 0, wins: 0, podiums: 0 };
+      teamSeason[team].points += s.points;
+      teamSeason[team].wins += s.wins;
+      teamSeason[team].podiums += s.podiums;
+    });
+    Object.entries(teamSeason).forEach(([team, s]) => {
+      if (team === "Unassigned") return;
+      if (!teamAgg[team]) {
+        teamAgg[team] = { points: 0, wins: 0, podiums: 0, titles: 0, seasons: new Set() };
+      }
+      teamAgg[team].points += s.points;
+      teamAgg[team].wins += s.wins;
+      teamAgg[team].podiums += s.podiums;
+      teamAgg[team].seasons.add(season);
+    });
+    const teamRanked = Object.entries(teamSeason)
+      .filter(([t]) => t !== "Unassigned")
+      .sort((a, b) => b[1].points - a[1].points);
+    if (teamRanked.length && teamRanked[0][1].points > 0) {
+      const champTeam = teamRanked[0][0];
+      teamAgg[champTeam].titles += 1;
+      constructorChampions[season] = champTeam;
+    }
+  });
+
+  const isSeasonComplete = (() => {
+    // Heuristic: mark current/most-recent season as "in progress" if it equals max season
+    // Champions list shows finalized seasons only — we'll show all with a "*" for current.
+    return null;
+  })();
+  const currentMaxSeason = seasons[seasons.length - 1];
+
+  const driverRows = Object.entries(driverAgg)
+    .sort((a, b) => b[1].points - a[1].points)
+    .map(([name, d], idx) => {
+      const team = d.lastTeam || "Unassigned";
+      const color = TEAM_COLORS[team] || "#444";
+      const titleBadge = d.titles > 0
+        ? `<span class="rec-title-badge" title="${d.titles} championship${d.titles > 1 ? "s" : ""}">★ ${d.titles}</span>`
+        : "";
+      return `<tr class="standings-row${idx === 0 ? " is-leader" : ""}">
+        <td class="col-rank rank-cell"><span class="rank-num">${idx + 1}</span></td>
+        <td class="col-driver driver-cell" style="--team-color:${color};">
+          <span class="driver-name">${name.toUpperCase()} ${titleBadge}</span>
+          <span class="driver-team">${team}</span>
+        </td>
+        <td class="pts-cell">${d.points}</td>
+        <td class="rec-num">${d.wins}</td>
+        <td class="rec-num">${d.podiums}</td>
+        <td class="rec-num">${d.races}</td>
+        <td class="rec-num">${d.seasons.size}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const teamRows = Object.entries(teamAgg)
+    .sort((a, b) => b[1].points - a[1].points)
+    .map(([team, t], idx) => {
+      const color = TEAM_COLORS[team] || "#444";
+      const titleBadge = t.titles > 0
+        ? `<span class="rec-title-badge" title="${t.titles} constructor title${t.titles > 1 ? "s" : ""}">★ ${t.titles}</span>`
+        : "";
+      return `<tr class="standings-row${idx === 0 ? " is-leader" : ""}">
+        <td class="col-rank rank-cell"><span class="rank-num">${idx + 1}</span></td>
+        <td class="driver-cell" style="--team-color:${color};">
+          <span class="driver-name">${team.toUpperCase()} ${titleBadge}</span>
+          <span class="driver-team">${t.seasons.size} season${t.seasons.size > 1 ? "s" : ""}</span>
+        </td>
+        <td class="pts-cell">${t.points}</td>
+        <td class="rec-num">${t.wins}</td>
+        <td class="rec-num">${t.podiums}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const champRows = seasons
+    .slice()
+    .reverse()
+    .map((season) => {
+      const dChamp = driverChampions[season] || "—";
+      const cChamp = constructorChampions[season] || "—";
+      const isCurrent = season === currentMaxSeason;
+      const dColor = TEAM_COLORS[(getTeamsForSeason(season)[dChamp]) || ""] || "#444";
+      const cColor = TEAM_COLORS[cChamp] || "#444";
+      return `<tr>
+        <td class="rec-season">S${season}${isCurrent ? '<span class="rec-current">live</span>' : ""}</td>
+        <td><span class="rec-champ-dot" style="background:${dColor};"></span>${dChamp.toUpperCase()}</td>
+        <td><span class="rec-champ-dot" style="background:${cColor};"></span>${cChamp}</td>
+      </tr>`;
+    })
+    .join("");
+
+  container.innerHTML = `
+    <div class="records-wrap">
+      <div class="records-block">
+        <h3 class="records-title">Driver Records — All Seasons</h3>
+        <div class="table-responsive standings-wrap">
+          <table class="standings-table standings-v2 records-table">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-driver">Driver</th>
+                <th class="col-pts">Pts</th>
+                <th class="rec-num">Wins</th>
+                <th class="rec-num">Pod</th>
+                <th class="rec-num">GP</th>
+                <th class="rec-num">Sn</th>
+              </tr>
+            </thead>
+            <tbody>${driverRows || `<tr><td colspan="7" class="rec-empty">No race results yet.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="records-block">
+        <h3 class="records-title">Constructor Records — All Seasons</h3>
+        <div class="table-responsive standings-wrap">
+          <table class="standings-table standings-v2 records-table">
+            <thead>
+              <tr>
+                <th class="col-rank">#</th>
+                <th class="col-driver">Team</th>
+                <th class="col-pts">Pts</th>
+                <th class="rec-num">Wins</th>
+                <th class="rec-num">Pod</th>
+              </tr>
+            </thead>
+            <tbody>${teamRows || `<tr><td colspan="5" class="rec-empty">Assign drivers to teams to build constructor records.</td></tr>`}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="records-block">
+        <h3 class="records-title">Champions by Season</h3>
+        <div class="table-responsive standings-wrap">
+          <table class="standings-table standings-v2 records-table records-champs">
+            <thead>
+              <tr>
+                <th>Season</th>
+                <th>Drivers' Champion</th>
+                <th>Constructors' Champion</th>
+              </tr>
+            </thead>
+            <tbody>${champRows || `<tr><td colspan="3" class="rec-empty">No completed seasons yet.</td></tr>`}</tbody>
+          </table>
+        </div>
+        <div class="rec-footnote">The latest season is marked "live" — its champion may still change.</div>
+      </div>
+    </div>
+  `;
+}
+
 
 // Driver team assignment helpers
 function getDriverTeams() {
