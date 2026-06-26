@@ -1087,82 +1087,53 @@ function renderSavedSessions(sessions) {
     .slice()
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // Group by date (YYYY-MM-DD) so we can render date headers
-  const groupsByDate = new Map();
-  displaySessions.forEach((s) => {
-    const d = new Date(s.created_at);
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    if (!groupsByDate.has(key)) groupsByDate.set(key, { date: d, items: [] });
-    groupsByDate.get(key).items.push(s);
-  });
-
-  const fmtTime = (d) =>
-    `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  const fmtDateHeader = (d) =>
-    d
-      .toLocaleDateString(undefined, {
-        weekday: "short",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-      .toUpperCase();
-
   const catLabel = (c) => {
     if (!c) return "";
     if (c === "Sprint Shootout") return "SHOOTOUT";
     return c.toUpperCase();
   };
 
-  for (const { date, items } of groupsByDate.values()) {
-    const header = document.createElement("div");
-    header.className = "session-date-header";
-    header.textContent = fmtDateHeader(date);
-    grid.appendChild(header);
+  displaySessions.forEach((session) => {
+    const trackKey = (session.track_name || "").toLowerCase();
+    const flag = trackToFlag[trackKey] || "🏁";
+    const weatherIcon = determineWeatherIcon(session);
+    const isWin =
+      session.category === "Race" &&
+      Number(session.finishing_position) === 1;
+    const winMarker = isWin
+      ? '<span class="result-tag win-marker mini">WIN</span>'
+      : "";
 
-    items.forEach((session) => {
-      const trackKey = (session.track_name || "").toLowerCase();
-      const flag = trackToFlag[trackKey] || "🏁";
-      const weatherIcon = determineWeatherIcon(session);
-      const isWin =
-        session.category === "Race" &&
-        Number(session.finishing_position) === 1;
-      const winMarker = isWin
-        ? '<span class="result-tag win-marker mini">WIN</span>'
-        : "";
-      const t = new Date(session.created_at);
-
-      const card = document.createElement("div");
-      card.className = `session-row ${currentData && currentData.id === session.id ? "active" : ""}`;
-      card.innerHTML = `
-        <button class="delete-btn" title="Delete">🗑️</button>
-        <div class="sr-left">
-          <div class="sr-track">
-            <span class="flag-icon">${flag}</span>
-            <span class="sr-track-name">${session.track_name || "Unknown"}</span>
-          </div>
-          <div class="sr-time">${fmtTime(t)}</div>
+    const card = document.createElement("div");
+    card.className = `session-row ${currentData && currentData.id === session.id ? "active" : ""}`;
+    card.innerHTML = `
+      <button class="delete-btn" title="Delete">🗑️</button>
+      <div class="sr-left">
+        <div class="sr-track">
+          <span class="flag-icon">${flag}</span>
+          <span class="sr-track-name">${session.track_name || "Unknown"}</span>
         </div>
-        <div class="sr-right">
-          <span class="sr-cat">🏁 ${catLabel(session.category)}</span>
-          <span class="sr-weather">${weatherIcon}</span>
-          ${winMarker}
-        </div>
-      `;
+      </div>
+      <div class="sr-right">
+        <span class="sr-cat">🏁 ${catLabel(session.category)}</span>
+        <span class="sr-weather">${weatherIcon}</span>
+        ${winMarker}
+      </div>
+    `;
 
-      card.querySelector(".delete-btn").onclick = (e) =>
-        deleteSession(session.id, e);
+    card.querySelector(".delete-btn").onclick = (e) =>
+      deleteSession(session.id, e);
 
-      card.addEventListener("click", (e) => {
-        if (e.target.closest(".delete-btn")) return;
-        currentData = session;
-        renderContent();
-        renderSavedSessions(allSessions);
-      });
-
-      grid.appendChild(card);
+    card.addEventListener("click", (e) => {
+      if (e.target.closest(".delete-btn")) return;
+      currentData = session;
+      renderContent();
+      renderSavedSessions(allSessions);
     });
-  }
+
+    grid.appendChild(card);
+  });
+
 
   renderStandingsTable();
 
