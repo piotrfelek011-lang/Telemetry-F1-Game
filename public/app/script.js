@@ -3527,11 +3527,12 @@ function renderRecordsTable() {
                 <th class="col-pts">Pts</th>
                 <th class="rec-num">Wins</th>
                 <th class="rec-num">Pod</th>
+                <th class="rec-num" title="Fastest Laps">FL</th>
                 <th class="rec-num">GP</th>
                 <th class="rec-num">Sn</th>
               </tr>
             </thead>
-            <tbody>${driverRows || `<tr><td colspan="7" class="rec-empty">No race results yet.</td></tr>`}</tbody>
+            <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
           </table>
         </div>
       </div>
