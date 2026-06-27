@@ -602,6 +602,27 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     });
   });
 
+  // Final classification (every driver) with total time, best lap, status
+  const classification = (classification_data || [])
+    .map((e) => {
+      const fc = e["final-classification"] || {};
+      return {
+        position: fc.position || null,
+        name: String(e["driver-name"] || "").toUpperCase(),
+        team: e.team || "",
+        laps: fc["num-laps"] || 0,
+        time_s: fc["total-race-time"] || 0,
+        time_str: fc["total-race-time-str"] || "",
+        best_lap_ms: fc["best-lap-time-ms"] || 0,
+        best_lap_str: fc["best-lap-time-str"] || "",
+        status: fc["result-status"] || "",
+        points: fc.points || 0,
+        pits: fc["num-pit-stops"] || 0,
+      };
+    })
+    .filter((e) => e.position)
+    .sort((a, b) => a.position - b.position);
+
   return {
     player_name: playerName,
     player_team: playerTeam,
@@ -612,6 +633,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     pace_delta,
     speed_traps,
     fastest_lap,
+    classification,
   };
 }
 
