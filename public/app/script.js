@@ -1148,12 +1148,13 @@ function renderSavedSessions(sessions) {
     const trackKey = (session.track_name || "").toLowerCase();
     const flag = trackToFlag[trackKey] || "🏁";
     const weatherIcon = determineWeatherIcon(session);
-    const isWin =
-      session.category === "Race" &&
-      Number(session.finishing_position) === 1;
-    const winMarker = isWin
-      ? '<span class="result-tag win-marker mini">WIN</span>'
-      : "";
+    const badges = getSessionBadges(session);
+    const badgeHtml = [
+      badges.grandSlam ? '<span class="result-tag mini tag-gs" title="Grand Slam">GS</span>' : "",
+      badges.win ? '<span class="result-tag mini tag-w" title="Win">W</span>' : "",
+      badges.pole ? '<span class="result-tag mini tag-p" title="Pole">P</span>' : "",
+      badges.fl ? '<span class="result-tag mini tag-fl" title="Fastest Lap">FL</span>' : "",
+    ].join("");
 
     const card = document.createElement("div");
     card.className = `session-row ${currentData && currentData.id === session.id ? "active" : ""}`;
@@ -1168,7 +1169,7 @@ function renderSavedSessions(sessions) {
       <div class="sr-right">
         <span class="sr-cat">🏁 ${catLabel(session.category)}</span>
         <span class="sr-weather">${weatherIcon}</span>
-        ${winMarker}
+        ${badgeHtml}
       </div>
     `;
 
