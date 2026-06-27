@@ -2041,3 +2041,84 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
   color: #777;
   font-style: italic;
 }
+
+/* Final Classification table */
+.final-classification { overflow-x: auto; }
+.fc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.82rem;
+}
+.fc-table thead th {
+  text-align: left;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-weight: 700;
+  background: rgba(255,255,255,0.02);
+}
+.fc-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+.fc-row { transition: background 0.15s; }
+.fc-row:hover { background: rgba(255,255,255,0.03); }
+.fc-row.is-player {
+  background: rgba(225,6,0,0.08);
+  box-shadow: inset 3px 0 0 var(--f1-red);
+}
+.fc-row.is-player:hover { background: rgba(225,6,0,0.13); }
+.fc-row.is-fl {
+  background: linear-gradient(90deg, rgba(154,73,255,0.18), rgba(154,73,255,0.04));
+  box-shadow: inset 3px 0 0 #9a49ff;
+}
+.fc-row.is-fl.is-player {
+  background: linear-gradient(90deg, rgba(154,73,255,0.22), rgba(225,6,0,0.10));
+  box-shadow: inset 3px 0 0 #9a49ff;
+}
+.fc-row.is-dnf { opacity: 0.6; }
+
+.fc-pos { width: 40px; text-align: center; }
+.fc-pos-pill {
+  display: inline-block;
+  min-width: 26px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  font-size: 0.78rem;
+}
+.fc-pos-pill.p1 { background: linear-gradient(135deg,#ffd84a,#f3a900); color:#000; }
+.fc-pos-pill.p2 { background: linear-gradient(135deg,#e5e5e5,#a8a8a8); color:#000; }
+.fc-pos-pill.p3 { background: linear-gradient(135deg,#e3a468,#a06a36); color:#000; }
+
+.fc-driver { min-width: 160px; border-left: 3px solid var(--team-color); padding-left: 10px !important; }
+.fc-name { display: block; font-weight: 700; letter-spacing: 0.03em; }
+.fc-team { display: block; font-size: 0.66rem; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.08em; }
+.fc-fl-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  background: #9a49ff;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
+.fc-laps, .fc-pits, .fc-pts { text-align: center; font-variant-numeric: tabular-nums; }
+.fc-time, .fc-gap, .fc-best {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+}
+.fc-gap { color: var(--text-mute); }
+.fc-pts { font-weight: 700; }
