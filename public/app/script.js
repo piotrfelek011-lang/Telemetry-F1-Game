@@ -946,12 +946,47 @@ async function saveSessions(sessions) {
     race_story: session.race_story || null,
   }));
 
+  // Overwrite: delete any existing row matching driver+track+season+category, then insert
+  for (const row of dataToInsert) {
+    try {
+      await db.from("telemetry_sessions").delete().match({
+        driver_name: row.driver_name,
+        track_name: row.track_name,
+        season: row.season,
+        category: row.category,
+      });
+    } catch (err) {
+      console.warn("Pre-delete for overwrite failed (continuing):", err);
+    }
+  }
+
   const { error } = await db
     .from("telemetry_sessions")
     .insert(dataToInsert);
 
   if (error) throw error;
   await loadSavedSessions();
+}
+
+// Compute Win / Pole / Fastest-lap / Grand-slam flags for a saved session
+function getSessionBadges(session) {
+  const cat = (session.category || "").toLowerCase();
+  const isRaceLike = cat === "race" || cat === "sprint";
+  if (!isRaceLike) return { win: false, pole: false, fl: false, grandSlam: false };
+  const finish = Number(session.finishing_position ?? session.finishing_pos);
+  const start = Number(session.starting_position ?? session.starting_pos);
+  const rs = session.race_story || {};
+  const playerName = (rs.player_name || session.driver_name || "").toUpperCase();
+  const win = finish === 1;
+  const pole = start === 1;
+  const fl =
+    !!(rs.fastest_lap && (rs.fastest_lap.name || "").toUpperCase() === playerName);
+  const ledEveryLap =
+    Array.isArray(rs.position_history) &&
+    rs.position_history.length > 1 &&
+    rs.position_history.filter((p) => p.lap >= 1).every((p) => p.position === 1);
+  const grandSlam = cat === "race" && win && pole && fl && ledEveryLap;
+  return { win, pole, fl, grandSlam };
 }
 
 async function clearSessionStatus(statusType) {
