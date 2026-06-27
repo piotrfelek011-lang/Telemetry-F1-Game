@@ -1732,11 +1732,34 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 }
 .session-row:hover .delete-btn { opacity: 0.6; }
 .session-row .delete-btn:hover { opacity: 1; color: var(--f1-red); }
-.result-tag.win-marker.mini {
+.result-tag.mini {
   font-size: 0.55rem; padding: 1px 5px;
+  border-radius: 4px; font-weight: 800;
+  letter-spacing: 0.08em; color: #000;
+  display: inline-block; line-height: 1.4;
+}
+.result-tag.mini.tag-w {
   background: linear-gradient(135deg, #ffd84a, #f3a900);
-  color: #000; border-radius: 4px; font-weight: 800;
-  letter-spacing: 0.08em;
+}
+.result-tag.mini.tag-p {
+  background: linear-gradient(135deg, #b388ff, #6a3df0);
+  color: #fff;
+}
+.result-tag.mini.tag-fl {
+  background: linear-gradient(135deg, #b388ff, #6a3df0);
+  color: #fff;
+  background: linear-gradient(135deg, #57e0ff, #2196f3);
+}
+.result-tag.mini.tag-gs {
+  background: linear-gradient(135deg, #ff3b3b, #e10600);
+  color: #fff;
+  box-shadow: 0 0 6px rgba(225,6,0,0.55);
+}
+.rs-pill.rs-grand-slam {
+  background: linear-gradient(135deg, #ff3b3b, #e10600);
+  color: #fff; border-color: transparent; font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 8px rgba(225,6,0,0.55);
 }
 
 /* Tighten old sidebar season-summary (no longer used there) */

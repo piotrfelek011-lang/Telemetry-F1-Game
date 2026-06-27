@@ -587,6 +587,21 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       kmph: Math.round(s["speed-trap-record-kmph"] || 0),
     }));
 
+  // Fastest lap of the race (overall, across all drivers)
+  let fastest_lap = null;
+  (classification_data || []).forEach((e) => {
+    const name = String(e["driver-name"] || "").toUpperCase();
+    const team = e.team || "";
+    const laps = e["lap-time-history"]?.["lap-history-data"] || [];
+    laps.forEach((l, i) => {
+      const ms = l["lap-time-in-ms"] || 0;
+      const valid = (l["lap-valid-bit-flags"] === undefined) || (l["lap-valid-bit-flags"] & 1);
+      if (ms > 0 && valid && (!fastest_lap || ms < fastest_lap.time_ms)) {
+        fastest_lap = { name, team, lap: i + 1, time_ms: ms };
+      }
+    });
+  });
+
   return {
     player_name: playerName,
     player_team: playerTeam,
@@ -596,6 +611,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     overtakes_suffered,
     pace_delta,
     speed_traps,
+    fastest_lap,
   };
 }
 
@@ -930,12 +946,47 @@ async function saveSessions(sessions) {
     race_story: session.race_story || null,
   }));
 
+  // Overwrite: delete any existing row matching driver+track+season+category, then insert
+  for (const row of dataToInsert) {
+    try {
+      await db.from("telemetry_sessions").delete().match({
+        driver_name: row.driver_name,
+        track_name: row.track_name,
+        season: row.season,
+        category: row.category,
+      });
+    } catch (err) {
+      console.warn("Pre-delete for overwrite failed (continuing):", err);
+    }
+  }
+
   const { error } = await db
     .from("telemetry_sessions")
     .insert(dataToInsert);
 
   if (error) throw error;
   await loadSavedSessions();
+}
+
+// Compute Win / Pole / Fastest-lap / Grand-slam flags for a saved session
+function getSessionBadges(session) {
+  const cat = (session.category || "").toLowerCase();
+  const isRaceLike = cat === "race" || cat === "sprint";
+  if (!isRaceLike) return { win: false, pole: false, fl: false, grandSlam: false };
+  const finish = Number(session.finishing_position ?? session.finishing_pos);
+  const start = Number(session.starting_position ?? session.starting_pos);
+  const rs = session.race_story || {};
+  const playerName = (rs.player_name || session.driver_name || "").toUpperCase();
+  const win = finish === 1;
+  const pole = start === 1;
+  const fl =
+    !!(rs.fastest_lap && (rs.fastest_lap.name || "").toUpperCase() === playerName);
+  const ledEveryLap =
+    Array.isArray(rs.position_history) &&
+    rs.position_history.length > 1 &&
+    rs.position_history.filter((p) => p.lap >= 1).every((p) => p.position === 1);
+  const grandSlam = cat === "race" && win && pole && fl && ledEveryLap;
+  return { win, pole, fl, grandSlam };
 }
 
 async function clearSessionStatus(statusType) {
@@ -1097,12 +1148,13 @@ function renderSavedSessions(sessions) {
     const trackKey = (session.track_name || "").toLowerCase();
     const flag = trackToFlag[trackKey] || "🏁";
     const weatherIcon = determineWeatherIcon(session);
-    const isWin =
-      session.category === "Race" &&
-      Number(session.finishing_position) === 1;
-    const winMarker = isWin
-      ? '<span class="result-tag win-marker mini">WIN</span>'
-      : "";
+    const badges = getSessionBadges(session);
+    const badgeHtml = [
+      badges.grandSlam ? '<span class="result-tag mini tag-gs" title="Grand Slam">GS</span>' : "",
+      badges.win ? '<span class="result-tag mini tag-w" title="Win">W</span>' : "",
+      badges.pole ? '<span class="result-tag mini tag-p" title="Pole">P</span>' : "",
+      badges.fl ? '<span class="result-tag mini tag-fl" title="Fastest Lap">FL</span>' : "",
+    ].join("");
 
     const card = document.createElement("div");
     card.className = `session-row ${currentData && currentData.id === session.id ? "active" : ""}`;
@@ -1117,7 +1169,7 @@ function renderSavedSessions(sessions) {
       <div class="sr-right">
         <span class="sr-cat">🏁 ${catLabel(session.category)}</span>
         <span class="sr-weather">${weatherIcon}</span>
-        ${winMarker}
+        ${badgeHtml}
       </div>
     `;
 
@@ -3299,7 +3351,7 @@ function computeSeasonStandings(season) {
     if (!session.results) return;
     session.results.forEach((res) => {
       const name = res.name;
-      if (!drivers[name]) drivers[name] = { points: 0, wins: 0, podiums: 0, races: 0 };
+      if (!drivers[name]) drivers[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0 };
       const pos = parseInt(res.position);
       const cat = (session.category || "").toLowerCase();
       let pts = 0;
@@ -3312,6 +3364,12 @@ function computeSeasonStandings(season) {
         if (pos >= 1 && pos <= 3) drivers[name].podiums += 1;
       }
     });
+    // Fastest lap credit (race only)
+    const flName = ((session.race_story?.fastest_lap?.name) || "").toUpperCase();
+    if (flName && (session.category || "").toLowerCase() === "race") {
+      if (!drivers[flName]) drivers[flName] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0 };
+      drivers[flName].fastest_laps += 1;
+    }
   });
   return drivers;
 }
@@ -3340,12 +3398,13 @@ function renderRecordsTable() {
 
     Object.entries(standings).forEach(([name, s]) => {
       if (!driverAgg[name]) {
-        driverAgg[name] = { points: 0, wins: 0, podiums: 0, races: 0, titles: 0, seasons: new Set(), lastTeam: null };
+        driverAgg[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, titles: 0, seasons: new Set(), lastTeam: null };
       }
       driverAgg[name].points += s.points;
       driverAgg[name].wins += s.wins;
       driverAgg[name].podiums += s.podiums;
       driverAgg[name].races += s.races;
+      driverAgg[name].fastest_laps += s.fastest_laps || 0;
       driverAgg[name].seasons.add(season);
       if (teams[name]) driverAgg[name].lastTeam = teams[name];
     });
@@ -3411,6 +3470,7 @@ function renderRecordsTable() {
         <td class="pts-cell">${d.points}</td>
         <td class="rec-num">${d.wins}</td>
         <td class="rec-num">${d.podiums}</td>
+        <td class="rec-num">${d.fastest_laps || 0}</td>
         <td class="rec-num">${d.races}</td>
         <td class="rec-num">${d.seasons.size}</td>
       </tr>`;
@@ -3467,11 +3527,12 @@ function renderRecordsTable() {
                 <th class="col-pts">Pts</th>
                 <th class="rec-num">Wins</th>
                 <th class="rec-num">Pod</th>
+                <th class="rec-num" title="Fastest Laps">FL</th>
                 <th class="rec-num">GP</th>
                 <th class="rec-num">Sn</th>
               </tr>
             </thead>
-            <tbody>${driverRows || `<tr><td colspan="7" class="rec-empty">No race results yet.</td></tr>`}</tbody>
+            <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
           </table>
         </div>
       </div>
@@ -3990,6 +4051,14 @@ function renderRaceStory() {
   const end = rs.position_history[rs.position_history.length - 1]?.position;
   const gained = (start ?? 0) - (end ?? 0);
   const headline = document.getElementById("raceStoryHeadline");
+  const badges = getSessionBadges(currentData);
+  const fl = rs.fastest_lap;
+  const fmtFl = (ms) => {
+    if (!ms) return "";
+    const m = Math.floor(ms / 60000);
+    const s = ((ms % 60000) / 1000).toFixed(3).padStart(6, "0");
+    return `${m}:${s}`;
+  };
   if (headline) {
     headline.innerHTML = `
       <span class="rs-pill"><b>${rs.player_name}</b></span>
@@ -4000,6 +4069,8 @@ function renderRaceStory() {
       </span>
       <span class="rs-pill">Overtakes made ${rs.overtakes_made.length}</span>
       <span class="rs-pill">Lost ${rs.overtakes_suffered.length}</span>
+      ${fl ? `<span class="rs-pill ${badges.fl ? "rs-pos" : ""}">⏱ Fastest lap: ${fl.name} (L${fl.lap} ${fmtFl(fl.time_ms)})</span>` : ""}
+      ${badges.grandSlam ? `<span class="rs-pill rs-grand-slam">👑 GRAND SLAM</span>` : ""}
     `;
   }
 
