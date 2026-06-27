@@ -602,6 +602,27 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     });
   });
 
+  // Final classification (every driver) with total time, best lap, status
+  const classification = (classification_data || [])
+    .map((e) => {
+      const fc = e["final-classification"] || {};
+      return {
+        position: fc.position || null,
+        name: String(e["driver-name"] || "").toUpperCase(),
+        team: e.team || "",
+        laps: fc["num-laps"] || 0,
+        time_s: fc["total-race-time"] || 0,
+        time_str: fc["total-race-time-str"] || "",
+        best_lap_ms: fc["best-lap-time-ms"] || 0,
+        best_lap_str: fc["best-lap-time-str"] || "",
+        status: fc["result-status"] || "",
+        points: fc.points || 0,
+        pits: fc["num-pit-stops"] || 0,
+      };
+    })
+    .filter((e) => e.position)
+    .sort((a, b) => a.position - b.position);
+
   return {
     player_name: playerName,
     player_team: playerTeam,
@@ -612,6 +633,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     pace_delta,
     speed_traps,
     fastest_lap,
+    classification,
   };
 }
 
@@ -4078,6 +4100,96 @@ function renderRaceStory() {
   renderOvertakesChart(rs);
   renderStintStrip();
   renderTopSpeedList(rs);
+  renderFinalClassification(rs);
+}
+
+function renderFinalClassification(rs) {
+  const el = document.getElementById("finalClassification");
+  if (!el) return;
+  const list = rs.classification || [];
+  if (!list.length) {
+    el.innerHTML = `<div class="race-story-empty">No classification data.</div>`;
+    return;
+  }
+  const fl = rs.fastest_lap;
+  const flName = fl ? (fl.name || "").toUpperCase() : "";
+  const leader = list[0];
+  const fmtGap = (sec) => {
+    if (!isFinite(sec) || sec <= 0) return "—";
+    if (sec < 60) return `+${sec.toFixed(3)}`;
+    const m = Math.floor(sec / 60);
+    const s = (sec - m * 60).toFixed(3).padStart(6, "0");
+    return `+${m}:${s}`;
+  };
+
+  const rows = list
+    .map((e, i) => {
+      const isLeader = i === 0;
+      const isPlayer = e.name === (rs.player_name || "").toUpperCase();
+      const isFL = flName && e.name === flName;
+      const dnf = e.status && !/FINISHED/i.test(e.status);
+      let gapLeader = "—";
+      let gapNext = "—";
+      if (isLeader) {
+        gapLeader = "LEADER";
+        gapNext = "—";
+      } else if (dnf) {
+        gapLeader = e.status || "DNF";
+        gapNext = "—";
+      } else if (e.laps < leader.laps) {
+        const lapDiff = leader.laps - e.laps;
+        gapLeader = `+${lapDiff} lap${lapDiff > 1 ? "s" : ""}`;
+        const prev = list[i - 1];
+        if (prev && prev.laps > e.laps) {
+          const d = prev.laps - e.laps;
+          gapNext = `+${d} lap${d > 1 ? "s" : ""}`;
+        } else if (prev) {
+          gapNext = fmtGap(e.time_s - prev.time_s);
+        }
+      } else {
+        gapLeader = fmtGap(e.time_s - leader.time_s);
+        const prev = list[i - 1];
+        gapNext = prev ? fmtGap(e.time_s - prev.time_s) : "—";
+      }
+      const color = teamColorFor(e.team) || "#444";
+      const pos = e.position;
+      const posClass =
+        pos === 1 ? "p1" : pos === 2 ? "p2" : pos === 3 ? "p3" : "";
+      return `<tr class="fc-row${isPlayer ? " is-player" : ""}${isFL ? " is-fl" : ""}${dnf ? " is-dnf" : ""}" style="--team-color:${color};">
+        <td class="fc-pos"><span class="fc-pos-pill ${posClass}">${pos}</span></td>
+        <td class="fc-driver">
+          <span class="fc-name">${e.name}${isFL ? ' <span class="fc-fl-badge" title="Fastest Lap">FL</span>' : ""}</span>
+          <span class="fc-team">${e.team}</span>
+        </td>
+        <td class="fc-laps">${e.laps}</td>
+        <td class="fc-time">${e.time_str || (dnf ? (e.status || "—") : "—")}</td>
+        <td class="fc-gap">${gapLeader}</td>
+        <td class="fc-gap">${gapNext}</td>
+        <td class="fc-best">${e.best_lap_str || "—"}</td>
+        <td class="fc-pits">${e.pits}</td>
+        <td class="fc-pts">${e.points}</td>
+      </tr>`;
+    })
+    .join("");
+
+  el.innerHTML = `
+    <table class="fc-table">
+      <thead>
+        <tr>
+          <th>Pos</th>
+          <th>Driver</th>
+          <th>Laps</th>
+          <th>Time</th>
+          <th>Gap (Leader)</th>
+          <th>Interval</th>
+          <th>Best Lap</th>
+          <th>Pits</th>
+          <th>Pts</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
 }
 
 function renderPositionChart(rs) {
