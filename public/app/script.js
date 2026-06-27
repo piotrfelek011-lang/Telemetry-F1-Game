@@ -587,6 +587,21 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       kmph: Math.round(s["speed-trap-record-kmph"] || 0),
     }));
 
+  // Fastest lap of the race (overall, across all drivers)
+  let fastest_lap = null;
+  (classification_data || []).forEach((e) => {
+    const name = String(e["driver-name"] || "").toUpperCase();
+    const team = e.team || "";
+    const laps = e["lap-time-history"]?.["lap-history-data"] || [];
+    laps.forEach((l, i) => {
+      const ms = l["lap-time-in-ms"] || 0;
+      const valid = (l["lap-valid-bit-flags"] === undefined) || (l["lap-valid-bit-flags"] & 1);
+      if (ms > 0 && valid && (!fastest_lap || ms < fastest_lap.time_ms)) {
+        fastest_lap = { name, team, lap: i + 1, time_ms: ms };
+      }
+    });
+  });
+
   return {
     player_name: playerName,
     player_team: playerTeam,
@@ -596,6 +611,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     overtakes_suffered,
     pace_delta,
     speed_traps,
+    fastest_lap,
   };
 }
 
