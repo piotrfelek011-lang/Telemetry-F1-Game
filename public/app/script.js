@@ -4042,6 +4042,14 @@ function renderRaceStory() {
   const end = rs.position_history[rs.position_history.length - 1]?.position;
   const gained = (start ?? 0) - (end ?? 0);
   const headline = document.getElementById("raceStoryHeadline");
+  const badges = getSessionBadges(currentData);
+  const fl = rs.fastest_lap;
+  const fmtFl = (ms) => {
+    if (!ms) return "";
+    const m = Math.floor(ms / 60000);
+    const s = ((ms % 60000) / 1000).toFixed(3).padStart(6, "0");
+    return `${m}:${s}`;
+  };
   if (headline) {
     headline.innerHTML = `
       <span class="rs-pill"><b>${rs.player_name}</b></span>
@@ -4052,6 +4060,8 @@ function renderRaceStory() {
       </span>
       <span class="rs-pill">Overtakes made ${rs.overtakes_made.length}</span>
       <span class="rs-pill">Lost ${rs.overtakes_suffered.length}</span>
+      ${fl ? `<span class="rs-pill ${badges.fl ? "rs-pos" : ""}">⏱ Fastest lap: ${fl.name} (L${fl.lap} ${fmtFl(fl.time_ms)})</span>` : ""}
+      ${badges.grandSlam ? `<span class="rs-pill rs-grand-slam">👑 GRAND SLAM</span>` : ""}
     `;
   }
 
