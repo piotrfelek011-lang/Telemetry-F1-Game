@@ -3287,8 +3287,16 @@ function renderStandingsTable() {
     scoringSessions.forEach((s) => {
       const pos = d.positions[s.id || s.created_at];
       const posNum = parseInt(pos);
-      const pillClass = posNum >= 1 && posNum <= 3 ? ` pos-${posNum}` : (pos ? "" : " is-empty");
-      html += `<td class="pos-cell"><span class="pos-pill${pillClass}">${pos || "–"}</span></td>`;
+      let pillClass = "";
+      let label = pos;
+      if (posNum >= 1 && posNum <= 3) {
+        pillClass = ` pos-${posNum}`;
+      } else if (!pos) {
+        // Driver missing from this session's results — treat as DNF
+        pillClass = " is-dnf";
+        label = "DNF";
+      }
+      html += `<td class="pos-cell"><span class="pos-pill${pillClass}" title="${label === "DNF" ? "Did Not Finish / no data" : ""}">${label}</span></td>`;
     });
 
     // Calculate gap to the driver ahead
