@@ -3574,6 +3574,7 @@ function renderRecordsTable() {
         <span><b>Wins</b> Race wins (P1 in Race or Sprint)</span>
         <span><b>Pod</b> Podiums (P1–P3)</span>
         <span><b>FL</b> Fastest laps</span>
+        <span><b>DOTD</b> Driver of the Day</span>
         <span><b>GP</b> Grands Prix entered</span>
         <span><b>Sn</b> Seasons active</span>
         <span><b>★</b> Championship titles</span>
@@ -3590,11 +3591,12 @@ function renderRecordsTable() {
                 <th class="rec-num" title="Race wins">Wins</th>
                 <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
                 <th class="rec-num" title="Fastest Laps">FL</th>
+                <th class="rec-num" title="Driver of the Day">DOTD</th>
                 <th class="rec-num" title="Grands Prix entered">GP</th>
                 <th class="rec-num" title="Seasons active">Sn</th>
               </tr>
             </thead>
-            <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
+            <tbody>${driverRows || `<tr><td colspan="9" class="rec-empty">No race results yet.</td></tr>`}</tbody>
           </table>
         </div>
       </div>
