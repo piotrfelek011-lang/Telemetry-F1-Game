@@ -647,6 +647,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     pace_delta,
     speed_traps,
     fastest_lap,
+    driver_of_the_day,
     classification,
   };
 }
