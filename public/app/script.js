@@ -597,10 +597,24 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       const ms = l["lap-time-in-ms"] || 0;
       const valid = (l["lap-valid-bit-flags"] === undefined) || (l["lap-valid-bit-flags"] & 1);
       if (ms > 0 && valid && (!fastest_lap || ms < fastest_lap.time_ms)) {
-        fastest_lap = { name, team, lap: i + 1, time_ms: ms };
+        const totalSec = ms / 1000;
+        const m = Math.floor(totalSec / 60);
+        const s = (totalSec - m * 60).toFixed(3).padStart(6, "0");
+        fastest_lap = { name, team, lap: i + 1, time_ms: ms, lap_time_str: `${m}:${s}` };
       }
     });
   });
+
+  // Driver of the Day — pulled from common field names if game records it
+  let driver_of_the_day = null;
+  (classification_data || []).forEach((e) => {
+    const fc = e["final-classification"] || {};
+    if (fc["driver-of-the-day"] || fc["is-driver-of-the-day"] || e["driver-of-the-day"]) {
+      driver_of_the_day = String(e["driver-name"] || "").toUpperCase();
+    }
+  });
+  const rootDOTD = rootData?.["driver-of-the-day"] || rootData?.["records"]?.["driver-of-the-day"];
+  if (!driver_of_the_day && rootDOTD) driver_of_the_day = String(rootDOTD).toUpperCase();
 
   // Final classification (every driver) with total time, best lap, status
   const classification = (classification_data || [])
