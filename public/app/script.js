@@ -3546,6 +3546,15 @@ function renderRecordsTable() {
 
   container.innerHTML = `
     <div class="records-wrap">
+      <div class="records-legend">
+        <span><b>Pts</b> Total points</span>
+        <span><b>Wins</b> Race wins (P1 in Race or Sprint)</span>
+        <span><b>Pod</b> Podiums (P1–P3)</span>
+        <span><b>FL</b> Fastest laps</span>
+        <span><b>GP</b> Grands Prix entered</span>
+        <span><b>Sn</b> Seasons active</span>
+        <span><b>★</b> Championship titles</span>
+      </div>
       <div class="records-block">
         <h3 class="records-title">Driver Records — All Seasons</h3>
         <div class="table-responsive standings-wrap">
@@ -3554,12 +3563,12 @@ function renderRecordsTable() {
               <tr>
                 <th class="col-rank">#</th>
                 <th class="col-driver">Driver</th>
-                <th class="col-pts">Pts</th>
-                <th class="rec-num">Wins</th>
-                <th class="rec-num">Pod</th>
+                <th class="col-pts" title="Total points">Pts</th>
+                <th class="rec-num" title="Race wins">Wins</th>
+                <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
                 <th class="rec-num" title="Fastest Laps">FL</th>
-                <th class="rec-num">GP</th>
-                <th class="rec-num">Sn</th>
+                <th class="rec-num" title="Grands Prix entered">GP</th>
+                <th class="rec-num" title="Seasons active">Sn</th>
               </tr>
             </thead>
             <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
@@ -3575,9 +3584,9 @@ function renderRecordsTable() {
               <tr>
                 <th class="col-rank">#</th>
                 <th class="col-driver">Team</th>
-                <th class="col-pts">Pts</th>
-                <th class="rec-num">Wins</th>
-                <th class="rec-num">Pod</th>
+                <th class="col-pts" title="Total points">Pts</th>
+                <th class="rec-num" title="Race wins">Wins</th>
+                <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
               </tr>
             </thead>
             <tbody>${teamRows || `<tr><td colspan="5" class="rec-empty">Assign drivers to teams to build constructor records.</td></tr>`}</tbody>
