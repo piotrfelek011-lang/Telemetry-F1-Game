@@ -3396,7 +3396,7 @@ function computeSeasonStandings(season) {
     if (!session.results) return;
     session.results.forEach((res) => {
       const name = res.name;
-      if (!drivers[name]) drivers[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0 };
+      if (!drivers[name]) drivers[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, dotd: 0 };
       const pos = parseInt(res.position);
       const cat = (session.category || "").toLowerCase();
       let pts = 0;
@@ -3412,8 +3412,14 @@ function computeSeasonStandings(season) {
     // Fastest lap credit (race only)
     const flName = ((session.race_story?.fastest_lap?.name) || "").toUpperCase();
     if (flName && (session.category || "").toLowerCase() === "race") {
-      if (!drivers[flName]) drivers[flName] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0 };
+      if (!drivers[flName]) drivers[flName] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, dotd: 0 };
       drivers[flName].fastest_laps += 1;
+    }
+    // Driver of the Day credit (race only)
+    const dotdName = (session.race_story?.driver_of_the_day || "").toUpperCase();
+    if (dotdName && (session.category || "").toLowerCase() === "race") {
+      if (!drivers[dotdName]) drivers[dotdName] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, dotd: 0 };
+      drivers[dotdName].dotd += 1;
     }
   });
   return drivers;
@@ -3443,13 +3449,14 @@ function renderRecordsTable() {
 
     Object.entries(standings).forEach(([name, s]) => {
       if (!driverAgg[name]) {
-        driverAgg[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, titles: 0, seasons: new Set(), lastTeam: null };
+        driverAgg[name] = { points: 0, wins: 0, podiums: 0, races: 0, fastest_laps: 0, dotd: 0, titles: 0, seasons: new Set(), lastTeam: null };
       }
       driverAgg[name].points += s.points;
       driverAgg[name].wins += s.wins;
       driverAgg[name].podiums += s.podiums;
       driverAgg[name].races += s.races;
       driverAgg[name].fastest_laps += s.fastest_laps || 0;
+      driverAgg[name].dotd += s.dotd || 0;
       driverAgg[name].seasons.add(season);
       if (teams[name]) driverAgg[name].lastTeam = teams[name];
     });
@@ -3516,6 +3523,7 @@ function renderRecordsTable() {
         <td class="rec-num">${d.wins}</td>
         <td class="rec-num">${d.podiums}</td>
         <td class="rec-num">${d.fastest_laps || 0}</td>
+        <td class="rec-num">${d.dotd || 0}</td>
         <td class="rec-num">${d.races}</td>
         <td class="rec-num">${d.seasons.size}</td>
       </tr>`;
@@ -3566,6 +3574,7 @@ function renderRecordsTable() {
         <span><b>Wins</b> Race wins (P1 in Race or Sprint)</span>
         <span><b>Pod</b> Podiums (P1–P3)</span>
         <span><b>FL</b> Fastest laps</span>
+        <span><b>DOTD</b> Driver of the Day</span>
         <span><b>GP</b> Grands Prix entered</span>
         <span><b>Sn</b> Seasons active</span>
         <span><b>★</b> Championship titles</span>
@@ -3582,11 +3591,12 @@ function renderRecordsTable() {
                 <th class="rec-num" title="Race wins">Wins</th>
                 <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
                 <th class="rec-num" title="Fastest Laps">FL</th>
+                <th class="rec-num" title="Driver of the Day">DOTD</th>
                 <th class="rec-num" title="Grands Prix entered">GP</th>
                 <th class="rec-num" title="Seasons active">Sn</th>
               </tr>
             </thead>
-            <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
+            <tbody>${driverRows || `<tr><td colspan="9" class="rec-empty">No race results yet.</td></tr>`}</tbody>
           </table>
         </div>
       </div>
