@@ -2157,3 +2157,48 @@ body.light-theme #driver-assignments-container { background: #ffffff; }
 }
 .fc-gap { color: var(--text-mute); }
 .fc-pts { font-weight: 700; }
+
+/* Fastest Lap / Driver of the Day banner above the Final Classification */
+.fc-fl-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #6b1fbf 0%, #9a49ff 50%, #6b1fbf 100%);
+  box-shadow: 0 4px 18px rgba(154,73,255,0.30), inset 0 1px 0 rgba(255,255,255,0.18);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.fc-fl-chip {
+  background: rgba(0,0,0,0.30);
+  border: 1px solid rgba(255,255,255,0.30);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.10em;
+}
+.fc-fl-driver { font-size: 1.05rem; text-transform: uppercase; }
+.fc-fl-time {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 1rem;
+  background: rgba(0,0,0,0.25);
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+.fc-fl-meta { font-size: 0.78rem; opacity: 0.85; font-weight: 500; }
+.fc-dotd-chip {
+  margin-left: auto;
+  background: rgba(255,200,0,0.20);
+  border: 1px solid rgba(255,210,80,0.55);
+  color: #ffe27a;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0.10em;
+}
+.fc-dotd-driver { color: #ffe27a; font-size: 1rem; text-transform: uppercase; }
