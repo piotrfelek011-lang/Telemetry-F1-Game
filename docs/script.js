@@ -597,10 +597,24 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
       const ms = l["lap-time-in-ms"] || 0;
       const valid = (l["lap-valid-bit-flags"] === undefined) || (l["lap-valid-bit-flags"] & 1);
       if (ms > 0 && valid && (!fastest_lap || ms < fastest_lap.time_ms)) {
-        fastest_lap = { name, team, lap: i + 1, time_ms: ms };
+        const totalSec = ms / 1000;
+        const m = Math.floor(totalSec / 60);
+        const s = (totalSec - m * 60).toFixed(3).padStart(6, "0");
+        fastest_lap = { name, team, lap: i + 1, time_ms: ms, lap_time_str: `${m}:${s}` };
       }
     });
   });
+
+  // Driver of the Day — pulled from common field names if game records it
+  let driver_of_the_day = null;
+  (classification_data || []).forEach((e) => {
+    const fc = e["final-classification"] || {};
+    if (fc["driver-of-the-day"] || fc["is-driver-of-the-day"] || e["driver-of-the-day"]) {
+      driver_of_the_day = String(e["driver-name"] || "").toUpperCase();
+    }
+  });
+  const rootDOTD = rootData?.["driver-of-the-day"] || rootData?.["records"]?.["driver-of-the-day"];
+  if (!driver_of_the_day && rootDOTD) driver_of_the_day = String(rootDOTD).toUpperCase();
 
   // Final classification (every driver) with total time, best lap, status
   const classification = (classification_data || [])
@@ -633,6 +647,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     pace_delta,
     speed_traps,
     fastest_lap,
+    driver_of_the_day,
     classification,
   };
 }
@@ -3287,8 +3302,16 @@ function renderStandingsTable() {
     scoringSessions.forEach((s) => {
       const pos = d.positions[s.id || s.created_at];
       const posNum = parseInt(pos);
-      const pillClass = posNum >= 1 && posNum <= 3 ? ` pos-${posNum}` : (pos ? "" : " is-empty");
-      html += `<td class="pos-cell"><span class="pos-pill${pillClass}">${pos || "–"}</span></td>`;
+      let pillClass = "";
+      let label = pos;
+      if (posNum >= 1 && posNum <= 3) {
+        pillClass = ` pos-${posNum}`;
+      } else if (!pos) {
+        // Driver missing from this session's results — treat as DNF
+        pillClass = " is-dnf";
+        label = "DNF";
+      }
+      html += `<td class="pos-cell"><span class="pos-pill${pillClass}" title="${label === "DNF" ? "Did Not Finish / no data" : ""}">${label}</span></td>`;
     });
 
     // Calculate gap to the driver ahead
@@ -3538,6 +3561,15 @@ function renderRecordsTable() {
 
   container.innerHTML = `
     <div class="records-wrap">
+      <div class="records-legend">
+        <span><b>Pts</b> Total points</span>
+        <span><b>Wins</b> Race wins (P1 in Race or Sprint)</span>
+        <span><b>Pod</b> Podiums (P1–P3)</span>
+        <span><b>FL</b> Fastest laps</span>
+        <span><b>GP</b> Grands Prix entered</span>
+        <span><b>Sn</b> Seasons active</span>
+        <span><b>★</b> Championship titles</span>
+      </div>
       <div class="records-block">
         <h3 class="records-title">Driver Records — All Seasons</h3>
         <div class="table-responsive standings-wrap">
@@ -3546,12 +3578,12 @@ function renderRecordsTable() {
               <tr>
                 <th class="col-rank">#</th>
                 <th class="col-driver">Driver</th>
-                <th class="col-pts">Pts</th>
-                <th class="rec-num">Wins</th>
-                <th class="rec-num">Pod</th>
+                <th class="col-pts" title="Total points">Pts</th>
+                <th class="rec-num" title="Race wins">Wins</th>
+                <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
                 <th class="rec-num" title="Fastest Laps">FL</th>
-                <th class="rec-num">GP</th>
-                <th class="rec-num">Sn</th>
+                <th class="rec-num" title="Grands Prix entered">GP</th>
+                <th class="rec-num" title="Seasons active">Sn</th>
               </tr>
             </thead>
             <tbody>${driverRows || `<tr><td colspan="8" class="rec-empty">No race results yet.</td></tr>`}</tbody>
@@ -3567,9 +3599,9 @@ function renderRecordsTable() {
               <tr>
                 <th class="col-rank">#</th>
                 <th class="col-driver">Team</th>
-                <th class="col-pts">Pts</th>
-                <th class="rec-num">Wins</th>
-                <th class="rec-num">Pod</th>
+                <th class="col-pts" title="Total points">Pts</th>
+                <th class="rec-num" title="Race wins">Wins</th>
+                <th class="rec-num" title="Podiums (P1–P3)">Pod</th>
               </tr>
             </thead>
             <tbody>${teamRows || `<tr><td colspan="5" class="rec-empty">Assign drivers to teams to build constructor records.</td></tr>`}</tbody>
@@ -4172,7 +4204,18 @@ function renderFinalClassification(rs) {
     })
     .join("");
 
+  const flBanner = fl
+    ? `<div class="fc-fl-banner">
+        <span class="fc-fl-chip">⚡ FASTEST LAP</span>
+        <span class="fc-fl-driver">${(fl.name || "").toUpperCase()}</span>
+        ${fl.lap_time_str ? `<span class="fc-fl-time">${fl.lap_time_str}</span>` : ""}
+        ${fl.lap ? `<span class="fc-fl-meta">Lap ${fl.lap}</span>` : ""}
+        ${rs.driver_of_the_day ? `<span class="fc-dotd-chip">🌟 DRIVER OF THE DAY</span><span class="fc-dotd-driver">${String(rs.driver_of_the_day).toUpperCase()}</span>` : ""}
+      </div>`
+    : "";
+
   el.innerHTML = `
+    ${flBanner}
     <table class="fc-table">
       <thead>
         <tr>
