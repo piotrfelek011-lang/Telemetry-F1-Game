@@ -3132,6 +3132,48 @@ function createChart(
           ctx.setLineDash([]); // Reset for other drawings
         }
       });
+
+      // 3. Fault overlays (ERS / DRS / engine / gearbox / aero)
+      const FAULT_STYLES = {
+        ers:     { color: "#ffb020", label: "ERS" },
+        drs:     { color: "#5ad1ff", label: "DRS" },
+        engine:  { color: "#ff5252", label: "ENG" },
+        gearbox: { color: "#c084fc", label: "GBX" },
+        aero:    { color: "#9aff9a", label: "AERO" },
+      };
+      let prevDmg = null;
+      laps.forEach((lap) => {
+        if (!lap || !lap.damage) return;
+        const d = lap.damage;
+        const faults = [];
+        if (d.ers_fault) faults.push("ers");
+        if (d.drs_fault) faults.push("drs");
+        if (prevDmg) {
+          if ((d.engine || 0) - (prevDmg.engine || 0) >= 5) faults.push("engine");
+          if ((d.gearbox || 0) - (prevDmg.gearbox || 0) >= 5) faults.push("gearbox");
+          const aeroNow  = (d.fl_wing||0)+(d.fr_wing||0)+(d.rear_wing||0)+(d.floor||0)+(d.diffuser||0)+(d.sidepod||0);
+          const aeroPrev = (prevDmg.fl_wing||0)+(prevDmg.fr_wing||0)+(prevDmg.rear_wing||0)+(prevDmg.floor||0)+(prevDmg.diffuser||0)+(prevDmg.sidepod||0);
+          if (aeroNow - aeroPrev >= 10) faults.push("aero");
+        }
+        prevDmg = d;
+        if (!faults.length) return;
+        const xPos = pixelForLap(lap.lap);
+        faults.forEach((f, i) => {
+          const style = FAULT_STYLES[f];
+          ctx.strokeStyle = style.color;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          ctx.moveTo(xPos + i * 2, chartArea.top);
+          ctx.lineTo(xPos + i * 2, chartArea.bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = style.color;
+          ctx.font = "bold 9px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(style.label, xPos, chartArea.top + 14 + i * 11);
+        });
+      });
       ctx.restore();
     },
   };
