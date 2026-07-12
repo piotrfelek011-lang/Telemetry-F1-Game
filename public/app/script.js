@@ -241,6 +241,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   renderSeasonSelector();
   initCollapsibleSections();
+  _embedApplyView();
 
   // Load sessions then attempt to auto-load driver teams for the selected season.
   // This runs after the UI is wired so slow/failed DB startup cannot freeze clicks.
