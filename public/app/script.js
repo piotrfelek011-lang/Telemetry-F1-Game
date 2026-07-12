@@ -4,6 +4,54 @@ let currentSeason = 1;
 let qualiGapMode = "leader";
 const charts = {};
 
+// ---------------------------------------------------------------
+// Embed / deep-link bootstrap
+// The React shell iframes this app with ?season=&track=&view=
+// to render a single focused view (standings, race-story, etc).
+// ---------------------------------------------------------------
+const EMBED_QP = (() => {
+  try { return new URLSearchParams(location.search); } catch { return new URLSearchParams(); }
+})();
+const EMBED_VIEW   = EMBED_QP.get("view");    // e.g. "race-story"
+const EMBED_SEASON = EMBED_QP.get("season");  // "1" | "2" ...
+const EMBED_TRACK  = EMBED_QP.get("track");   // track_name
+const EMBED_CAT    = EMBED_QP.get("cat");     // optional category filter
+if (EMBED_VIEW) {
+  document.documentElement.classList.add("embed-mode");
+  document.body && document.body.classList.add("embed-mode");
+  document.addEventListener("DOMContentLoaded", () => document.body.classList.add("embed-mode"));
+}
+
+function _embedApplyView() {
+  if (!EMBED_VIEW) return;
+  const targetId = "section-" + EMBED_VIEW;
+  document.querySelectorAll(".collapsible-section").forEach((s) => {
+    s.classList.toggle("active", s.id === targetId);
+    if (s.id !== targetId) s.style.display = "none";
+  });
+  document.querySelectorAll(".section-tab").forEach((t) => {
+    t.classList.toggle("active", t.dataset.target === targetId);
+  });
+}
+function _embedSelectSession() {
+  if (!EMBED_TRACK) return;
+  const wanted = String(EMBED_TRACK).toLowerCase();
+  const wantedCat = EMBED_CAT ? String(EMBED_CAT).toLowerCase() : null;
+  const match = allSessions.find(
+    (s) =>
+      s.season === Number(EMBED_SEASON || currentSeason) &&
+      (s.track_name || "").toLowerCase() === wanted &&
+      (!wantedCat || (s.category || "").toLowerCase() === wantedCat),
+  );
+  if (match) {
+    currentData = match;
+    try { renderContent(); } catch (e) { console.warn(e); }
+  }
+}
+if (EMBED_SEASON) currentSeason = Number(EMBED_SEASON) || 1;
+
+
+
 // Global state for Practice Fuel Calculator
 let selectedPracticeLaps = new Set();
 let practiceFuelMap = new Map();
