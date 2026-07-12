@@ -78,10 +78,6 @@ function MainPage() {
             </button>
           ))}
           <div className="ml-auto flex gap-2">
-            <Link
-              to="/season/$season/records" as any
-              className="hidden"
-            />
             <button
               onClick={() => setShowManage((v) => !v)}
               className="rounded-md border border-white/15 px-3 py-1.5 text-sm font-semibold hover:bg-white/5"
