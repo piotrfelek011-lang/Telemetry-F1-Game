@@ -1387,6 +1387,7 @@ function renderSavedSessions(sessions) {
   renderStandingsTable();
 
   container.style.display = sessions.length ? "block" : "none";
+  if (EMBED_VIEW && !currentData) _embedSelectSession();
 }
 
 function determineWeatherIcon(session) {
