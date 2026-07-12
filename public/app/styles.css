@@ -2486,3 +2486,17 @@ body.sidebar-drawer-open .sidebar-backdrop {
   #compareDriverSelect { flex: 1; min-width: 0; }
 }
 
+
+/* ---------------- Embed mode (iframed by React shell) ---------------- */
+html.embed-mode, body.embed-mode { background: transparent; }
+body.embed-mode #topNav,
+body.embed-mode .sidebar,
+body.embed-mode .compact-header,
+body.embed-mode .season-stats-host,
+body.embed-mode .collapsible-tabs,
+body.embed-mode .sidebar-expand { display: none !important; }
+body.embed-mode .app-shell { display: block; }
+body.embed-mode .main-pane { padding: 8px 12px; max-width: 100%; }
+body.embed-mode .collapsible-section { display: none; }
+body.embed-mode .collapsible-section.active { display: block !important; }
+body.embed-mode .section-header { display: none; }

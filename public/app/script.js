@@ -4,6 +4,54 @@ let currentSeason = 1;
 let qualiGapMode = "leader";
 const charts = {};
 
+// ---------------------------------------------------------------
+// Embed / deep-link bootstrap
+// The React shell iframes this app with ?season=&track=&view=
+// to render a single focused view (standings, race-story, etc).
+// ---------------------------------------------------------------
+const EMBED_QP = (() => {
+  try { return new URLSearchParams(location.search); } catch { return new URLSearchParams(); }
+})();
+const EMBED_VIEW   = EMBED_QP.get("view");    // e.g. "race-story"
+const EMBED_SEASON = EMBED_QP.get("season");  // "1" | "2" ...
+const EMBED_TRACK  = EMBED_QP.get("track");   // track_name
+const EMBED_CAT    = EMBED_QP.get("cat");     // optional category filter
+if (EMBED_VIEW) {
+  document.documentElement.classList.add("embed-mode");
+  document.body && document.body.classList.add("embed-mode");
+  document.addEventListener("DOMContentLoaded", () => document.body.classList.add("embed-mode"));
+}
+
+function _embedApplyView() {
+  if (!EMBED_VIEW) return;
+  const targetId = "section-" + EMBED_VIEW;
+  document.querySelectorAll(".collapsible-section").forEach((s) => {
+    s.classList.toggle("active", s.id === targetId);
+    if (s.id !== targetId) s.style.display = "none";
+  });
+  document.querySelectorAll(".section-tab").forEach((t) => {
+    t.classList.toggle("active", t.dataset.target === targetId);
+  });
+}
+function _embedSelectSession() {
+  if (!EMBED_TRACK) return;
+  const wanted = String(EMBED_TRACK).toLowerCase();
+  const wantedCat = EMBED_CAT ? String(EMBED_CAT).toLowerCase() : null;
+  const match = allSessions.find(
+    (s) =>
+      s.season === Number(EMBED_SEASON || currentSeason) &&
+      (s.track_name || "").toLowerCase() === wanted &&
+      (!wantedCat || (s.category || "").toLowerCase() === wantedCat),
+  );
+  if (match) {
+    currentData = match;
+    try { renderContent(); } catch (e) { console.warn(e); }
+  }
+}
+if (EMBED_SEASON) currentSeason = Number(EMBED_SEASON) || 1;
+
+
+
 // Global state for Practice Fuel Calculator
 let selectedPracticeLaps = new Set();
 let practiceFuelMap = new Map();
@@ -193,6 +241,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   renderSeasonSelector();
   initCollapsibleSections();
+  _embedApplyView();
 
   // Load sessions then attempt to auto-load driver teams for the selected season.
   // This runs after the UI is wired so slow/failed DB startup cannot freeze clicks.
@@ -1338,6 +1387,7 @@ function renderSavedSessions(sessions) {
   renderStandingsTable();
 
   container.style.display = sessions.length ? "block" : "none";
+  if (EMBED_VIEW && !currentData) _embedSelectSession();
 }
 
 function determineWeatherIcon(session) {
@@ -3131,6 +3181,48 @@ function createChart(
           ctx.stroke();
           ctx.setLineDash([]); // Reset for other drawings
         }
+      });
+
+      // 3. Fault overlays (ERS / DRS / engine / gearbox / aero)
+      const FAULT_STYLES = {
+        ers:     { color: "#ffb020", label: "ERS" },
+        drs:     { color: "#5ad1ff", label: "DRS" },
+        engine:  { color: "#ff5252", label: "ENG" },
+        gearbox: { color: "#c084fc", label: "GBX" },
+        aero:    { color: "#9aff9a", label: "AERO" },
+      };
+      let prevDmg = null;
+      laps.forEach((lap) => {
+        if (!lap || !lap.damage) return;
+        const d = lap.damage;
+        const faults = [];
+        if (d.ers_fault) faults.push("ers");
+        if (d.drs_fault) faults.push("drs");
+        if (prevDmg) {
+          if ((d.engine || 0) - (prevDmg.engine || 0) >= 5) faults.push("engine");
+          if ((d.gearbox || 0) - (prevDmg.gearbox || 0) >= 5) faults.push("gearbox");
+          const aeroNow  = (d.fl_wing||0)+(d.fr_wing||0)+(d.rear_wing||0)+(d.floor||0)+(d.diffuser||0)+(d.sidepod||0);
+          const aeroPrev = (prevDmg.fl_wing||0)+(prevDmg.fr_wing||0)+(prevDmg.rear_wing||0)+(prevDmg.floor||0)+(prevDmg.diffuser||0)+(prevDmg.sidepod||0);
+          if (aeroNow - aeroPrev >= 10) faults.push("aero");
+        }
+        prevDmg = d;
+        if (!faults.length) return;
+        const xPos = pixelForLap(lap.lap);
+        faults.forEach((f, i) => {
+          const style = FAULT_STYLES[f];
+          ctx.strokeStyle = style.color;
+          ctx.lineWidth = 2;
+          ctx.setLineDash([2, 4]);
+          ctx.beginPath();
+          ctx.moveTo(xPos + i * 2, chartArea.top);
+          ctx.lineTo(xPos + i * 2, chartArea.bottom);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = style.color;
+          ctx.font = "bold 9px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(style.label, xPos, chartArea.top + 14 + i * 11);
+        });
       });
       ctx.restore();
     },
