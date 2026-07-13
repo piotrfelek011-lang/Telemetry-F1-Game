@@ -1,5 +1,5 @@
 // Client-side helpers for the F1 shell routes.
-// Reads sessions directly from Supabase REST API (anon key, matches /app/script.js).
+// Reads sessions directly from the same telemetry_sessions table used by /app/script.js.
 
 export const SUPABASE_URL = "https://kbjjtiajugxvhoboqxwb.supabase.co";
 export const SUPABASE_ANON_KEY =
@@ -8,8 +8,10 @@ export const SUPABASE_ANON_KEY =
 export type Session = {
   id: string;
   season: number;
+  driver_name?: string;
   track_name: string;
   category: string;
+  session_type?: string | null;
   finishing_position: number | null;
   starting_position: number | null;
   created_at: string;
@@ -32,9 +34,9 @@ export function setSavedSeason(n: number) {
 }
 
 export async function fetchSessions(season?: number): Promise<Session[]> {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/sessions`);
+  const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
   url.searchParams.set("select", "*");
-  url.searchParams.set("order", "created_at.desc");
+  url.searchParams.set("order", "session_date.desc");
   if (season != null) url.searchParams.set("season", `eq.${season}`);
   const res = await fetch(url.toString(), {
     headers: {
@@ -42,8 +44,26 @@ export async function fetchSessions(season?: number): Promise<Session[]> {
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
     },
   });
-  if (!res.ok) throw new Error(`Failed to load sessions (${res.status})`);
-  return res.json();
+  if (!res.ok) throw new Error(`Failed to load telemetry sessions (${res.status})`);
+  const rows = await res.json();
+  return rows.map(mapTelemetrySession);
+}
+
+function mapTelemetrySession(row: any): Session {
+  return {
+    ...row,
+    season: Number(row.season ?? 1),
+    driver_name: row.driver_name,
+    track_name: row.track_name,
+    category: row.category || "Race",
+    session_type: row.session_type ?? null,
+    finishing_position: row.finishing_position ?? row.finishing_pos ?? null,
+    starting_position: row.starting_position ?? row.starting_pos ?? null,
+    created_at: row.created_at ?? row.session_date ?? "",
+    lap_history: row.lap_history || [],
+    session_info: row.session_info || null,
+    race_story: row.race_story || null,
+  };
 }
 
 export function trackSlug(name: string) {
