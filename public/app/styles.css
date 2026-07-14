@@ -2500,3 +2500,23 @@ body.embed-mode .main-pane { padding: 8px 12px; max-width: 100%; }
 body.embed-mode .collapsible-section { display: none; }
 body.embed-mode .collapsible-section.active { display: block !important; }
 body.embed-mode .section-header { display: none; }
+
+/* Upload-only embed */
+html.embed-upload, body.embed-upload { background: transparent; }
+body.embed-upload #topNav,
+body.embed-upload .compact-header,
+body.embed-upload .season-stats-host,
+body.embed-upload .collapsible-tabs,
+body.embed-upload .collapsible-section,
+body.embed-upload .sidebar-expand,
+body.embed-upload .sidebar-brand,
+body.embed-upload .season-block,
+body.embed-upload .sessions-block,
+body.embed-upload .sidebar-backdrop { display: none !important; }
+body.embed-upload .app-shell { display: block; padding: 0; }
+body.embed-upload .sidebar { position: static; width: 100%; max-width: 100%; background: transparent; border: none; padding: 0; box-shadow: none; }
+body.embed-upload .sidebar-block { border: none; background: transparent; margin: 0; }
+body.embed-upload .sidebar-block[open] > summary,
+body.embed-upload .sidebar-block > summary { display: none; }
+body.embed-upload .sidebar-block-body { padding: 0; }
+body.embed-upload .main-pane { display: none; }
