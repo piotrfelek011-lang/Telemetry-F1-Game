@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { appEmbedUrl } from "@/lib/f1-shell";
+import { appEmbedUrl, titleCaseTrack } from "@/lib/f1-shell";
 import { ShellHeader, ShellPage } from "@/components/f1/ShellHeader";
 
 export const Route = createFileRoute("/season/$season/track/$track/$view")({
@@ -20,6 +20,7 @@ const LABELS: Record<string, string> = {
 function ViewPage() {
   const { season, track, view } = Route.useParams();
   const label = LABELS[view] ?? view;
+  const trackDisplay = titleCaseTrack(track);
   const src = appEmbedUrl({ season: Number(season), track, view });
 
   return (
@@ -27,7 +28,7 @@ function ViewPage() {
       <ShellHeader
         crumbs={[
           { label: `Season ${season}`, to: "/" },
-          { label: track, to: "/season/$season/track/$track", params: { season, track } },
+          { label: trackDisplay, to: "/season/$season/track/$track", params: { season, track } },
           { label },
         ]}
       />
@@ -39,7 +40,7 @@ function ViewPage() {
             params={{ season, track }}
             className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-white/5"
           >
-            ← Back to {track}
+            ← Back to {trackDisplay}
           </Link>
         </div>
         <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30">
@@ -54,3 +55,4 @@ function ViewPage() {
     </>
   );
 }
+

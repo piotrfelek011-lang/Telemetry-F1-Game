@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchSessions,
+  loadCachedSessions,
+  cacheIsFresh,
   getSavedSeason,
   setSavedSeason,
   groupByTrack,
@@ -9,8 +11,9 @@ import {
   trackFlag,
   trackMapUrl,
   trackSlug,
+  titleCaseTrack,
   badgesFor,
-  appManageUrl,
+  appEmbedUrl,
   type Session,
 } from "@/lib/f1-shell";
 import { ShellHeader, ShellPage } from "@/components/f1/ShellHeader";
@@ -27,25 +30,27 @@ export const Route = createFileRoute("/")({
   component: MainPage,
 });
 
-const SEASONS = [1, 2, 3, 4, 5];
+const SEASONS = Array.from({ length: 10 }, (_, i) => i + 1);
 
 function MainPage() {
   const [season, setSeason] = useState<number>(1);
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cached = typeof window !== "undefined" ? loadCachedSessions() : null;
+  const [sessions, setSessions] = useState<Session[]>(cached ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [err, setErr] = useState<string | null>(null);
-  const [showManage, setShowManage] = useState(false);
 
   useEffect(() => { setSeason(getSavedSeason()); }, []);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (cacheIsFresh() && cached) { setLoading(false); return; }
+    setLoading(sessions.length === 0);
     fetchSessions()
       .then((rows) => { if (!cancelled) setSessions(rows); })
       .catch((e) => { if (!cancelled) setErr(String(e)); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const seasonSessions = useMemo(
@@ -61,7 +66,7 @@ function MainPage() {
     <>
       <ShellHeader crumbs={[{ label: `Season ${season}` }]} />
       <ShellPage>
-        <div className="mb-6 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs uppercase tracking-widest text-white/50">Season</span>
           {SEASONS.map((n) => (
             <button
@@ -77,27 +82,11 @@ function MainPage() {
               S{n}
             </button>
           ))}
-          <div className="ml-auto flex gap-2">
-            <button
-              onClick={() => setShowManage((v) => !v)}
-              className="rounded-md border border-white/15 px-3 py-1.5 text-sm font-semibold hover:bg-white/5"
-            >
-              {showManage ? "Close manager" : "📁 Upload / Manage"}
-            </button>
-          </div>
         </div>
 
-        <StatsBar stats={stats} />
+        <UploadPanel />
 
-        {showManage && (
-          <div className="mb-6 overflow-hidden rounded-lg border border-white/10">
-            <iframe
-              title="Manage sessions"
-              src={appManageUrl()}
-              className="h-[800px] w-full"
-            />
-          </div>
-        )}
+        <StatsBar stats={stats} />
 
         <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-white/60">
           Tracks · Season {season}
@@ -107,7 +96,7 @@ function MainPage() {
         {err && <div className="text-red-400">Failed to load: {err}</div>}
         {!loading && trackGroups.length === 0 && (
           <div className="rounded-lg border border-dashed border-white/15 p-8 text-center text-white/50">
-            No sessions uploaded for Season {season} yet. Click <b>Upload / Manage</b> to add telemetry JSON.
+            No sessions uploaded for Season {season} yet. Use the upload panel above to add telemetry JSON.
           </div>
         )}
 
@@ -118,6 +107,25 @@ function MainPage() {
         </div>
       </ShellPage>
     </>
+  );
+}
+
+function UploadPanel() {
+  const src = appEmbedUrl({ season: 1, track: "", view: "upload" });
+  return (
+    <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-xs font-bold uppercase tracking-widest text-white/60">Upload sessions</div>
+        <div className="text-[11px] text-white/40">Race + Qualifying · batch supported</div>
+      </div>
+      <iframe
+        title="Upload sessions"
+        src={src}
+        loading="lazy"
+        className="w-full rounded border-0 bg-transparent"
+        style={{ height: 220 }}
+      />
+    </div>
   );
 }
 
@@ -150,6 +158,7 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
     Object.entries(b).forEach(([k, v]) => { if (v) badgeAgg[k] = true; });
   });
   const [imgOk, setImgOk] = useState(true);
+  const display = titleCaseTrack(track);
   return (
     <Link
       to="/season/$season/track/$track"
@@ -160,7 +169,9 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
         {imgOk ? (
           <img
             src={trackMapUrl(track)}
-            alt={track}
+            alt={display}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-contain p-3"
             onError={() => setImgOk(false)}
           />
@@ -172,13 +183,13 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
           {badgeAgg.win && <Tag color="#ffd700">W</Tag>}
           {badgeAgg.pole && <Tag color="#5ad1ff">P</Tag>}
           {badgeAgg.fl && <Tag color="#a855f7">FL</Tag>}
-          {!badgeAgg.win && badgeAgg.podium && <Tag color="#e5e7eb">🥂</Tag>}
+          {!badgeAgg.win && badgeAgg.podium && <Tag color="#cd7f32">P3</Tag>}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">{trackFlag(track)}</span>
-          <span className="truncate text-base font-bold capitalize">{track}</span>
+          <span className="truncate text-base font-bold">{display}</span>
         </div>
         <div className="flex flex-wrap gap-1">
           {cats.map((c) => (

@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchSessions,
+  loadCachedSessions,
   trackSlug,
   trackFlag,
   trackMapUrl,
+  titleCaseTrack,
   badgesFor,
   type Session,
 } from "@/lib/f1-shell";
@@ -28,7 +30,8 @@ const OPTIONS: { view: string; label: string; icon: string; desc: string }[] = [
 function TrackPage() {
   const { season, track } = Route.useParams();
   const seasonN = Number(season);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const cached = typeof window !== "undefined" ? loadCachedSessions() : null;
+  const [sessions, setSessions] = useState<Session[]>(cached ?? []);
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -36,10 +39,11 @@ function TrackPage() {
   }, [seasonN]);
 
   const trackSessions = useMemo(
-    () => sessions.filter((s) => trackSlug(s.track_name) === trackSlug(track)),
-    [sessions, track],
+    () => sessions.filter((s) => Number(s.season) === seasonN && trackSlug(s.track_name) === trackSlug(track)),
+    [sessions, track, seasonN],
   );
   const canonicalName = trackSessions[0]?.track_name ?? track;
+  const displayName = titleCaseTrack(canonicalName);
   const cats = Array.from(new Set(trackSessions.map((s) => s.category).filter(Boolean)));
   const race = trackSessions.find((s) => s.category === "Race");
   const infoSummary = race?.session_info
@@ -69,7 +73,7 @@ function TrackPage() {
       <ShellHeader
         crumbs={[
           { label: `Season ${season}`, to: "/" },
-          { label: canonicalName },
+          { label: displayName },
         ]}
       />
       <ShellPage>
@@ -77,7 +81,7 @@ function TrackPage() {
           <div>
             <div className="mb-2 flex items-center gap-3">
               <span className="text-4xl">{trackFlag(canonicalName)}</span>
-              <h1 className="text-3xl font-black capitalize">{canonicalName}</h1>
+              <h1 className="text-3xl font-black">{displayName}</h1>
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {cats.map((c) => (

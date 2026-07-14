@@ -33,9 +33,38 @@ export function setSavedSeason(n: number) {
   window.localStorage.setItem(SEASON_KEY, String(n));
 }
 
+const CACHE_KEY = "f1.sessions.cache.v1";
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+export function loadCachedSessions(): Session[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { t, rows } = JSON.parse(raw);
+    if (!Array.isArray(rows)) return null;
+    if (Date.now() - Number(t) > CACHE_TTL_MS * 24) return null; // hard TTL 2h
+    return rows as Session[];
+  } catch { return null; }
+}
+function saveCachedSessions(rows: Session[]) {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), rows })); } catch {}
+}
+export function cacheIsFresh(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return false;
+    const { t } = JSON.parse(raw);
+    return Date.now() - Number(t) < CACHE_TTL_MS;
+  } catch { return false; }
+}
+
 export async function fetchSessions(season?: number): Promise<Session[]> {
   const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
-  url.searchParams.set("select", "*");
+  // Trim heavy columns from list queries; details fetched per-session inside the app iframe.
+  url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_position,starting_position,created_at,session_date,race_story");
   url.searchParams.set("order", "session_date.desc");
   if (season != null) url.searchParams.set("season", `eq.${season}`);
   const res = await fetch(url.toString(), {
@@ -46,7 +75,17 @@ export async function fetchSessions(season?: number): Promise<Session[]> {
   });
   if (!res.ok) throw new Error(`Failed to load telemetry sessions (${res.status})`);
   const rows = await res.json();
-  return rows.map(mapTelemetrySession);
+  const mapped = rows.map(mapTelemetrySession);
+  if (season == null) saveCachedSessions(mapped);
+  return mapped;
+}
+
+export function titleCaseTrack(name: string) {
+  return (name || "")
+    .split(/([\s_-]+)/)
+    .map((p) => (/^[\s_-]+$/.test(p) ? " " : p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()))
+    .join("")
+    .trim();
 }
 
 function mapTelemetrySession(row: any): Session {
