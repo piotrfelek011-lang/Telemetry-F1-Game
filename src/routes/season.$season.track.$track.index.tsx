@@ -30,7 +30,8 @@ const OPTIONS: { view: string; label: string; icon: string; desc: string }[] = [
 function TrackPage() {
   const { season, track } = Route.useParams();
   const seasonN = Number(season);
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const cached = typeof window !== "undefined" ? loadCachedSessions() : null;
+  const [sessions, setSessions] = useState<Session[]>(cached ?? []);
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -38,10 +39,11 @@ function TrackPage() {
   }, [seasonN]);
 
   const trackSessions = useMemo(
-    () => sessions.filter((s) => trackSlug(s.track_name) === trackSlug(track)),
-    [sessions, track],
+    () => sessions.filter((s) => Number(s.season) === seasonN && trackSlug(s.track_name) === trackSlug(track)),
+    [sessions, track, seasonN],
   );
   const canonicalName = trackSessions[0]?.track_name ?? track;
+  const displayName = titleCaseTrack(canonicalName);
   const cats = Array.from(new Set(trackSessions.map((s) => s.category).filter(Boolean)));
   const race = trackSessions.find((s) => s.category === "Race");
   const infoSummary = race?.session_info
