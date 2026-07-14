@@ -17,9 +17,10 @@ const EMBED_SEASON = EMBED_QP.get("season");  // "1" | "2" ...
 const EMBED_TRACK  = EMBED_QP.get("track");   // track_name
 const EMBED_CAT    = EMBED_QP.get("cat");     // optional category filter
 if (EMBED_VIEW) {
-  document.documentElement.classList.add("embed-mode");
-  document.body && document.body.classList.add("embed-mode");
-  document.addEventListener("DOMContentLoaded", () => document.body.classList.add("embed-mode"));
+  const cls = EMBED_VIEW === "upload" ? "embed-upload" : "embed-mode";
+  document.documentElement.classList.add(cls);
+  document.body && document.body.classList.add(cls);
+  document.addEventListener("DOMContentLoaded", () => document.body.classList.add(cls));
 }
 
 function _embedApplyView() {
