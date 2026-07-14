@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   fetchSessions,
+  loadCachedSessions,
   trackSlug,
   trackFlag,
   trackMapUrl,
+  titleCaseTrack,
   badgesFor,
   type Session,
 } from "@/lib/f1-shell";
