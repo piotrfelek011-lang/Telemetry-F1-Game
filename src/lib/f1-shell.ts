@@ -64,7 +64,7 @@ export function cacheIsFresh(): boolean {
 export async function fetchSessions(season?: number): Promise<Session[]> {
   const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
   // Trim heavy columns from list queries; details fetched per-session inside the app iframe.
-  url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_position,starting_position,created_at,session_date,race_story");
+  url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_pos,starting_pos,created_at,session_date,race_story");
   url.searchParams.set("order", "session_date.desc");
   if (season != null) url.searchParams.set("season", `eq.${season}`);
   const res = await fetch(url.toString(), {
