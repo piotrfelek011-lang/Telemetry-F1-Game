@@ -2513,10 +2513,18 @@ body.embed-upload .sidebar-brand,
 body.embed-upload .season-block,
 body.embed-upload .sessions-block,
 body.embed-upload .sidebar-backdrop { display: none !important; }
-body.embed-upload .app-shell { display: block; padding: 0; }
-body.embed-upload .sidebar { position: static; width: 100%; max-width: 100%; background: transparent; border: none; padding: 0; box-shadow: none; }
+body.embed-upload .app-shell,
+body.embed-upload .app-shell.sidebar-collapsed { display: block; padding: 0; grid-template-columns: 1fr; }
+body.embed-upload .sidebar,
+body.embed-upload .app-shell.sidebar-collapsed .sidebar {
+  position: static; width: 100%; max-width: 100%;
+  background: transparent; border: none; padding: 0; box-shadow: none;
+  transform: none !important; opacity: 1 !important; visibility: visible !important;
+  pointer-events: auto !important; left: auto !important;
+}
 body.embed-upload .sidebar-block { border: none; background: transparent; margin: 0; }
 body.embed-upload .sidebar-block[open] > summary,
 body.embed-upload .sidebar-block > summary { display: none; }
 body.embed-upload .sidebar-block-body { padding: 0; }
 body.embed-upload .main-pane { display: none; }
+body.embed-upload .sidebar-toggle { display: none !important; }
