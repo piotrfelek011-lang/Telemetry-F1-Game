@@ -156,8 +156,7 @@ function StatsBar({ stats }: { stats: ReturnType<typeof seasonStats> }) {
   );
 }
 
-function TrackCard({ season, track, sessions }: { season: number; track: string; sessions: Session[] }) {
-  const cats = Array.from(new Set(sessions.map((s) => s.category).filter(Boolean)));
+function TrackCard({ season, track, category, sessions }: { season: number; track: string; category: string; sessions: Session[] }) {
   const badgeAgg: Record<string, boolean> = {};
   sessions.forEach((s) => {
     const b = badgesFor(s);
@@ -165,10 +164,12 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
   });
   const [imgOk, setImgOk] = useState(true);
   const display = titleCaseTrack(track);
+  const catColor = category === "Sprint" ? "#f59e0b" : category === "Practice" ? "#64748b" : "#ef4444";
   return (
     <Link
       to="/season/$season/track/$track"
       params={{ season: String(season), track: trackSlug(track) }}
+      search={{ cat: category }}
       className="group flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-red-500/60"
     >
       <div className="relative aspect-[16/9] bg-black/40">
