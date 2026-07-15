@@ -140,6 +140,7 @@ function TrackPage() {
               key={o.view}
               to="/season/$season/track/$track/$view"
               params={{ season, track, view: o.view }}
+              search={{ cat }}
               className="group flex items-start gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-red-500/60"
             >
               <span className="text-2xl">{o.icon}</span>
