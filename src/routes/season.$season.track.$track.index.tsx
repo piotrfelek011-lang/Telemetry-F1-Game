@@ -27,8 +27,17 @@ const OPTIONS: { view: string; label: string; icon: string; desc: string }[] = [
   { view: "practice",    label: "Practice",         icon: "🏁", desc: "Free practice fuel calculator" },
 ];
 
+function matchesCat(s: Session, bucket: string | undefined) {
+  if (!bucket) return true;
+  const c = s.category || "Race";
+  if (bucket === "Sprint") return c === "Sprint" || c === "Sprint Qualifying" || c === "Sprint Shootout";
+  if (bucket === "Practice") return c === "Practice";
+  return c !== "Sprint" && c !== "Sprint Qualifying" && c !== "Sprint Shootout" && c !== "Practice";
+}
+
 function TrackPage() {
   const { season, track } = Route.useParams();
+  const { cat } = Route.useSearch();
   const seasonN = Number(season);
   const cached = typeof window !== "undefined" ? loadCachedSessions() : null;
   const [sessions, setSessions] = useState<Session[]>(cached ?? []);
@@ -39,8 +48,13 @@ function TrackPage() {
   }, [seasonN]);
 
   const trackSessions = useMemo(
-    () => sessions.filter((s) => Number(s.season) === seasonN && trackSlug(s.track_name) === trackSlug(track)),
-    [sessions, track, seasonN],
+    () => sessions.filter(
+      (s) =>
+        Number(s.season) === seasonN &&
+        trackSlug(s.track_name) === trackSlug(track) &&
+        matchesCat(s, cat),
+    ),
+    [sessions, track, seasonN, cat],
   );
   const canonicalName = trackSessions[0]?.track_name ?? track;
   const displayName = titleCaseTrack(canonicalName);
