@@ -102,7 +102,13 @@ function MainPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trackGroups.map((g) => (
-            <TrackCard key={trackSlug(g.track)} season={season} track={g.track} sessions={g.sessions} />
+            <TrackCard
+              key={`${trackSlug(g.track)}::${g.category}`}
+              season={season}
+              track={g.track}
+              category={g.category}
+              sessions={g.sessions}
+            />
           ))}
         </div>
       </ShellPage>
