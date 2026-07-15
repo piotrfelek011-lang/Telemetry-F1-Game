@@ -24,6 +24,15 @@ function ViewPage() {
   const label = LABELS[view] ?? view;
   const trackDisplay = titleCaseTrack(track);
   const src = appEmbedUrl({ season: Number(season), track, view, cat });
+  const [loading, setLoading] = useState(true);
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setSlow(false);
+    const t = setTimeout(() => setSlow(true), 3000);
+    return () => clearTimeout(t);
+  }, [src]);
 
   return (
     <>
