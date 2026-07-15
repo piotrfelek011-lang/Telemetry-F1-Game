@@ -87,7 +87,7 @@ function TrackPage() {
       <ShellHeader
         crumbs={[
           { label: `Season ${season}`, to: "/" },
-          { label: displayName },
+          { label: cat ? `${displayName} · ${cat}` : displayName },
         ]}
       />
       <ShellPage>
@@ -95,7 +95,10 @@ function TrackPage() {
           <div>
             <div className="mb-2 flex items-center gap-3">
               <span className="text-4xl">{trackFlag(canonicalName)}</span>
-              <h1 className="text-3xl font-black">{displayName}</h1>
+              <h1 className="text-3xl font-black">
+                {displayName}
+                {cat && <span className="ml-3 text-lg font-bold text-white/60">{cat}</span>}
+              </h1>
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
               {cats.map((c) => (
