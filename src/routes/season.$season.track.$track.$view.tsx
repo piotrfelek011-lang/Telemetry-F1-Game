@@ -60,11 +60,21 @@ function ViewPage() {
             ← Back to {trackDisplay}
           </Link>
         </div>
-        <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30">
+        <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black/30">
+          {loading && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#0a0a0f]/90 backdrop-blur-sm">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/15 border-t-red-500" />
+              <div className="text-sm font-semibold text-white/80">Loading {label}…</div>
+              <div className="text-xs text-white/40">
+                {slow ? "Fetching telemetry from the database (first load can take 10–15s)" : "Preparing charts and race data"}
+              </div>
+            </div>
+          )}
           <iframe
             key={src}
             title={label}
             src={src}
+            onLoad={() => setLoading(false)}
             className="min-h-[85vh] w-full"
           />
         </div>
