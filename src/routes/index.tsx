@@ -199,11 +199,15 @@ function TrackCard({ season, track, category, sessions }: { season: number; trac
           <span className="truncate text-base font-bold">{display}</span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {cats.map((c) => (
-            <span key={c} className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70">
-              {c}
-            </span>
-          ))}
+          <span
+            className="rounded-sm px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-black"
+            style={{ background: catColor }}
+          >
+            {category}
+          </span>
+          <span className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
+            {sessions.length} session{sessions.length === 1 ? "" : "s"}
+          </span>
         </div>
       </div>
     </Link>
