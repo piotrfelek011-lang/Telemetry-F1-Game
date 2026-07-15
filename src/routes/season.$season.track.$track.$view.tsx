@@ -19,16 +19,22 @@ const LABELS: Record<string, string> = {
 
 function ViewPage() {
   const { season, track, view } = Route.useParams();
+  const { cat } = Route.useSearch();
   const label = LABELS[view] ?? view;
   const trackDisplay = titleCaseTrack(track);
-  const src = appEmbedUrl({ season: Number(season), track, view });
+  const src = appEmbedUrl({ season: Number(season), track, view, cat });
 
   return (
     <>
       <ShellHeader
         crumbs={[
           { label: `Season ${season}`, to: "/" },
-          { label: trackDisplay, to: "/season/$season/track/$track", params: { season, track } },
+          {
+            label: cat ? `${trackDisplay} · ${cat}` : trackDisplay,
+            to: "/season/$season/track/$track",
+            params: { season, track },
+            search: { cat },
+          },
           { label },
         ]}
       />
@@ -38,6 +44,7 @@ function ViewPage() {
           <Link
             to="/season/$season/track/$track"
             params={{ season, track }}
+            search={{ cat }}
             className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-white/5"
           >
             ← Back to {trackDisplay}
@@ -55,4 +62,3 @@ function ViewPage() {
     </>
   );
 }
-

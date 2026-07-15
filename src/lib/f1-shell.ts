@@ -170,15 +170,24 @@ export function seasonStats(sessions: Session[]) {
   };
 }
 
-// Group by track: latest session per (track_name).
+// Group by track + category so Sprint weekends surface both cards.
 export function groupByTrack(sessions: Session[]) {
-  const map = new Map<string, { track: string; sessions: Session[] }>();
+  const map = new Map<string, { track: string; category: string; sessions: Session[] }>();
   for (const s of sessions) {
-    const key = trackSlug(s.track_name);
-    if (!key) continue;
-    const bucket = map.get(key) ?? { track: s.track_name, sessions: [] };
-    bucket.sessions.push(s);
-    map.set(key, bucket);
+    const track = trackSlug(s.track_name);
+    if (!track) continue;
+    // Collapse Qualifying/Sprint Quali into their race weekend bucket.
+    const cat = s.category || "Race";
+    const bucket =
+      cat === "Sprint" || cat === "Sprint Qualifying" || cat === "Sprint Shootout"
+        ? "Sprint"
+        : cat === "Practice"
+        ? "Practice"
+        : "Race";
+    const key = `${track}::${bucket}`;
+    const entry = map.get(key) ?? { track: s.track_name, category: bucket, sessions: [] };
+    entry.sessions.push(s);
+    map.set(key, entry);
   }
   return Array.from(map.values());
 }

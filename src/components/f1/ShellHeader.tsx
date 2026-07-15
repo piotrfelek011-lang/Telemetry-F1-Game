@@ -9,7 +9,7 @@ export function titleCase(name: string) {
     .trim();
 }
 
-export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; params?: any }[] }) {
+export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; params?: any; search?: any }[] }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0f]/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3">
@@ -22,7 +22,7 @@ export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; par
             <span key={i} className="flex items-center gap-2">
               {i > 0 && <span className="text-white/30">/</span>}
               {c.to ? (
-                <Link to={c.to} params={c.params as any} className="text-white/70 hover:text-white">
+                <Link to={c.to} params={c.params as any} search={c.search as any} className="text-white/70 hover:text-white">
                   {c.label}
                 </Link>
               ) : (

@@ -102,7 +102,13 @@ function MainPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trackGroups.map((g) => (
-            <TrackCard key={trackSlug(g.track)} season={season} track={g.track} sessions={g.sessions} />
+            <TrackCard
+              key={`${trackSlug(g.track)}::${g.category}`}
+              season={season}
+              track={g.track}
+              category={g.category}
+              sessions={g.sessions}
+            />
           ))}
         </div>
       </ShellPage>
@@ -150,8 +156,7 @@ function StatsBar({ stats }: { stats: ReturnType<typeof seasonStats> }) {
   );
 }
 
-function TrackCard({ season, track, sessions }: { season: number; track: string; sessions: Session[] }) {
-  const cats = Array.from(new Set(sessions.map((s) => s.category).filter(Boolean)));
+function TrackCard({ season, track, category, sessions }: { season: number; track: string; category: string; sessions: Session[] }) {
   const badgeAgg: Record<string, boolean> = {};
   sessions.forEach((s) => {
     const b = badgesFor(s);
@@ -159,10 +164,12 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
   });
   const [imgOk, setImgOk] = useState(true);
   const display = titleCaseTrack(track);
+  const catColor = category === "Sprint" ? "#f59e0b" : category === "Practice" ? "#64748b" : "#ef4444";
   return (
     <Link
       to="/season/$season/track/$track"
       params={{ season: String(season), track: trackSlug(track) }}
+      search={{ cat: category }}
       className="group flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-red-500/60"
     >
       <div className="relative aspect-[16/9] bg-black/40">
@@ -192,11 +199,15 @@ function TrackCard({ season, track, sessions }: { season: number; track: string;
           <span className="truncate text-base font-bold">{display}</span>
         </div>
         <div className="flex flex-wrap gap-1">
-          {cats.map((c) => (
-            <span key={c} className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/70">
-              {c}
-            </span>
-          ))}
+          <span
+            className="rounded-sm px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-black"
+            style={{ background: catColor }}
+          >
+            {category}
+          </span>
+          <span className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
+            {sessions.length} session{sessions.length === 1 ? "" : "s"}
+          </span>
         </div>
       </div>
     </Link>
