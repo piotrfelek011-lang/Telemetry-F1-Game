@@ -34,8 +34,15 @@ function _embedApplyView() {
     t.classList.toggle("active", t.dataset.target === targetId);
   });
 }
+function _embedNotifyReady(status) {
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "f1-embed-ready", status: status || "ok", view: EMBED_VIEW }, "*");
+    }
+  } catch (e) { /* ignore */ }
+}
 function _embedSelectSession() {
-  if (!EMBED_TRACK) return;
+  if (!EMBED_TRACK) { _embedNotifyReady("no-track"); return; }
   const wanted = String(EMBED_TRACK).toLowerCase();
   const wantedCat = EMBED_CAT ? String(EMBED_CAT).toLowerCase() : null;
   const match = allSessions.find(
@@ -47,6 +54,9 @@ function _embedSelectSession() {
   if (match) {
     currentData = match;
     try { renderContent(); } catch (e) { console.warn(e); }
+    _embedNotifyReady("ok");
+  } else {
+    _embedNotifyReady("no-match");
   }
 }
 if (EMBED_SEASON) currentSeason = Number(EMBED_SEASON) || 1;

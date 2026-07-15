@@ -2528,3 +2528,36 @@ body.embed-upload .sidebar-block > summary { display: none; }
 body.embed-upload .sidebar-block-body { padding: 0; }
 body.embed-upload .main-pane { display: none; }
 body.embed-upload .sidebar-toggle { display: none !important; }
+
+/* Overlay guide legend above graphs */
+.overlay-guide {
+  margin: 6px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+}
+.overlay-guide-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 8px;
+}
+.overlay-guide-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  align-items: center;
+}
+.og-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.og-swatch { display: inline-block; width: 18px; height: 12px; border-radius: 2px; border: 1px dashed transparent; }
+.og-line { display: inline-block; width: 3px; height: 14px; border-radius: 1px; }
+.og-sep { width: 1px; height: 16px; background: rgba(255,255,255,0.12); }
+@media (max-width: 640px) {
+  .overlay-guide-items { gap: 4px 10px; font-size: 10px; }
+  .og-sep { display: none; }
+}
