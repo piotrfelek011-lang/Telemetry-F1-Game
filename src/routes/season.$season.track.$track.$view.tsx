@@ -31,7 +31,11 @@ function ViewPage() {
     setLoading(true);
     setSlow(false);
     const t = setTimeout(() => setSlow(true), 3000);
-    return () => clearTimeout(t);
+    const onMsg = (e: MessageEvent) => {
+      if (e?.data && e.data.type === "f1-embed-ready") setLoading(false);
+    };
+    window.addEventListener("message", onMsg);
+    return () => { clearTimeout(t); window.removeEventListener("message", onMsg); };
   }, [src]);
 
   return (
