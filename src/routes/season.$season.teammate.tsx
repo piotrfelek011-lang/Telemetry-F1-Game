@@ -140,11 +140,16 @@ function TeamH2H({
       track: string;
       raceA?: number | null; raceB?: number | null;
       qA?: number | null; qB?: number | null;
+      sqA?: number | null; sqB?: number | null;
       sA?: number | null; sB?: number | null;
     }> = {};
-    const findPos = (s: FullSession, name: string) => {
-      const r = (s.results || []).find((x) => String(x.name).toUpperCase() === name);
-      return r ? parseInt(String(r.position)) : null;
+    const findPos = (s: FullSession, name: string): number | null => {
+      const r = (s.results || []).find(
+        (x) => String(x.name || "").toUpperCase().trim() === name,
+      );
+      if (!r) return null;
+      const n = parseInt(String(r.position));
+      return Number.isFinite(n) && n > 0 ? n : null;
     };
     sessions.forEach((s) => {
       const track = s.track_name || "?";
@@ -153,15 +158,29 @@ function TeamH2H({
       const pa = findPos(s, a);
       const pb = findPos(s, b);
       const cat = (s.category || "").toLowerCase();
-      if (cat === "race") { w.raceA = pa; w.raceB = pb; }
-      else if (cat === "sprint") { w.sA = pa; w.sB = pb; }
-      else if (cat.includes("quali") || cat.includes("shootout")) { w.qA = pa; w.qB = pb; }
+      const uploader = String(s.driver_name || "").toUpperCase().trim();
+      if (cat === "race") {
+        w.raceA = pa; w.raceB = pb;
+        // Grid position doubles as quali result — fall back if quali missing
+        if (uploader === a && s.starting_pos != null && w.qA == null) w.qA = Number(s.starting_pos);
+        if (uploader === b && s.starting_pos != null && w.qB == null) w.qB = Number(s.starting_pos);
+      } else if (cat === "sprint") {
+        w.sA = pa; w.sB = pb;
+        if (uploader === a && s.starting_pos != null && w.sqA == null) w.sqA = Number(s.starting_pos);
+        if (uploader === b && s.starting_pos != null && w.sqB == null) w.sqB = Number(s.starting_pos);
+      } else if (cat === "sprint shootout" || cat === "sprint qualifying") {
+        if (pa != null) w.sqA = pa;
+        if (pb != null) w.sqB = pb;
+      } else if (cat.includes("quali")) {
+        if (pa != null) w.qA = pa;
+        if (pb != null) w.qB = pb;
+      }
     });
     return Object.values(perWeekend);
   }, [sessions, a, b]);
 
   const totals = useMemo(() => {
-    let raceA = 0, raceB = 0, qA = 0, qB = 0, sA = 0, sB = 0, ptsA = 0, ptsB = 0;
+    let raceA = 0, raceB = 0, qA = 0, qB = 0, sqA = 0, sqB = 0, sA = 0, sB = 0, ptsA = 0, ptsB = 0;
     rows.forEach((r) => {
       if (r.raceA && r.raceB) {
         if (r.raceA < r.raceB) raceA++; else if (r.raceA > r.raceB) raceB++;
@@ -171,16 +190,21 @@ function TeamH2H({
       if (r.qA && r.qB) {
         if (r.qA < r.qB) qA++; else if (r.qA > r.qB) qB++;
       }
+      if (r.sqA && r.sqB) {
+        if (r.sqA < r.sqB) sqA++; else if (r.sqA > r.sqB) sqB++;
+      }
       if (r.sA && r.sB) {
         if (r.sA < r.sB) sA++; else if (r.sA > r.sB) sB++;
         ptsA += SPRINT_POINTS[r.sA] || 0;
         ptsB += SPRINT_POINTS[r.sB] || 0;
       }
     });
-    return { raceA, raceB, qA, qB, sA, sB, ptsA, ptsB };
+    return { raceA, raceB, qA, qB, sqA, sqB, sA, sB, ptsA, ptsB };
   }, [rows]);
 
-  const relevantRows = rows.filter((r) => r.raceA || r.raceB || r.qA || r.qB || r.sA || r.sB);
+  const relevantRows = rows.filter(
+    (r) => r.raceA || r.raceB || r.qA || r.qB || r.sqA || r.sqB || r.sA || r.sB,
+  );
   const aLeads = totals.ptsA >= totals.ptsB;
 
   return (
@@ -193,10 +217,14 @@ function TeamH2H({
         <DriverBlock name={a} pts={totals.ptsA} good={aLeads} />
         <DriverBlock name={b} pts={totals.ptsB} good={!aLeads} />
       </div>
-      <div className="mb-3 grid grid-cols-3 gap-2 text-center text-[11px] uppercase tracking-widest text-white/50">
+      <div className="mb-3 grid grid-cols-4 gap-2 text-center text-[11px] uppercase tracking-widest text-white/50">
         <div>
           <div>Quali</div>
           <div className="mt-0.5 font-mono text-sm text-white">{totals.qA}–{totals.qB}</div>
+        </div>
+        <div>
+          <div>S.Quali</div>
+          <div className="mt-0.5 font-mono text-sm text-white">{totals.sqA}–{totals.sqB}</div>
         </div>
         <div>
           <div>Race</div>
@@ -214,6 +242,7 @@ function TeamH2H({
               <tr>
                 <th className="p-1.5 text-left">Track</th>
                 <th className="p-1.5">Q</th>
+                <th className="p-1.5">SQ</th>
                 <th className="p-1.5">R</th>
                 <th className="p-1.5">S</th>
               </tr>
@@ -223,6 +252,7 @@ function TeamH2H({
                 <tr key={r.track} className="border-t border-white/5">
                   <td className="p-1.5 font-semibold">{titleCaseTrack(r.track)}</td>
                   <PairCell x={r.qA} y={r.qB} />
+                  <PairCell x={r.sqA} y={r.sqB} />
                   <PairCell x={r.raceA} y={r.raceB} />
                   <PairCell x={r.sA} y={r.sB} />
                 </tr>
