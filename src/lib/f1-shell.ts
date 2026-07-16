@@ -105,8 +105,21 @@ function mapTelemetrySession(row: any): Session {
   };
 }
 
+const TRACK_SLUG_ALIASES: Record<string, string> = {
+  "las_vegas": "vegas",
+  "lasvegas": "vegas",
+  "yas_marina": "abu_dhabi",
+  "abu": "abu_dhabi",
+  "mexico_city": "mexico",
+  "interlagos": "brazil",
+  "são_paulo": "brazil",
+  "sao_paulo": "brazil",
+  "qatar": "losail",
+  "austin": "texas",
+};
 export function trackSlug(name: string) {
-  return (name || "").toLowerCase().trim();
+  const base = (name || "").toLowerCase().trim().replace(/\s+/g, "_");
+  return TRACK_SLUG_ALIASES[base] || base;
 }
 
 const BASE = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "") + "/";
