@@ -45,19 +45,74 @@ function _embedSelectSession() {
   if (!EMBED_TRACK) { _embedNotifyReady("no-track"); return; }
   const wanted = String(EMBED_TRACK).toLowerCase();
   const wantedCat = EMBED_CAT ? String(EMBED_CAT).toLowerCase() : null;
-  const match = allSessions.find(
-    (s) =>
-      s.season === Number(EMBED_SEASON || currentSeason) &&
-      (s.track_name || "").toLowerCase() === wanted &&
-      (!wantedCat || (s.category || "").toLowerCase() === wantedCat),
-  );
+  const seasonN = Number(EMBED_SEASON || currentSeason);
+  const isPracticeView = EMBED_VIEW === "practice";
+  // For the practice view we pick a Practice session regardless of `cat`,
+  // so the "Race → Practice" link surfaces every uploaded practice.
+  const match = allSessions.find((s) => {
+    if (s.season !== seasonN) return false;
+    if ((s.track_name || "").toLowerCase() !== wanted) return false;
+    if (isPracticeView) return (s.category || "").toLowerCase() === "practice";
+    return !wantedCat || (s.category || "").toLowerCase() === wantedCat;
+  });
   if (match) {
     currentData = match;
     try { renderContent(); } catch (e) { console.warn(e); }
+    if (isPracticeView) { try { _embedRenderPracticePicker(); } catch (e) { console.warn(e); } }
     _embedNotifyReady("ok");
   } else {
+    if (isPracticeView) { try { _embedRenderPracticePicker(); } catch (e) { console.warn(e); } }
     _embedNotifyReady("no-match");
   }
+}
+
+// Render a session picker at the top of the practice section listing every
+// Practice session uploaded for this track so the user can view P1/P2/P3.
+function _embedRenderPracticePicker() {
+  const section = document.getElementById("section-practice");
+  if (!section) return;
+  const wanted = String(EMBED_TRACK || "").toLowerCase();
+  const seasonN = Number(EMBED_SEASON || currentSeason);
+  const list = allSessions
+    .filter((s) =>
+      s.season === seasonN &&
+      (s.track_name || "").toLowerCase() === wanted &&
+      (s.category || "").toLowerCase() === "practice",
+    )
+    .sort((a, b) => String(a.session_type || "").localeCompare(String(b.session_type || "")));
+
+  let picker = document.getElementById("embedPracticePicker");
+  if (!picker) {
+    picker = document.createElement("div");
+    picker.id = "embedPracticePicker";
+    picker.style.cssText = "display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:rgba(255,255,255,0.04);";
+    const body = section.querySelector(".section-body");
+    if (body) body.prepend(picker); else section.prepend(picker);
+  }
+  if (list.length === 0) {
+    picker.innerHTML = '<div style="color:var(--secondary-text);font-size:0.9rem">No Practice sessions uploaded for this track yet. Upload a Practice_*.json to see the summary here.</div>';
+    return;
+  }
+  const currentId = currentData && (currentData.id || currentData.created_at);
+  picker.innerHTML =
+    '<div style="width:100%;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary-text);margin-bottom:4px">Practice Sessions</div>' +
+    list.map((s) => {
+      const id = s.id || s.created_at;
+      const label = s.session_type || "Practice";
+      const isActive = String(id) === String(currentId);
+      return `<button type="button" data-sid="${id}" style="padding:8px 14px;border-radius:8px;border:1px solid ${isActive ? "#ef4444" : "rgba(255,255,255,0.15)"};background:${isActive ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.03)"};color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer">${label}</button>`;
+    }).join("");
+  picker.querySelectorAll("button[data-sid]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sid = btn.getAttribute("data-sid");
+      const next = list.find((s) => String(s.id || s.created_at) === String(sid));
+      if (next) {
+        currentData = next;
+        try { renderContent(); } catch (e) { console.warn(e); }
+        _embedRenderPracticePicker();
+      }
+    });
+  });
 }
 if (EMBED_SEASON) currentSeason = Number(EMBED_SEASON) || 1;
 
@@ -542,9 +597,8 @@ async function handleFileUpload(e) {
           if (trackGuess) session.track_name = trackGuess;
         }
 
-        if (category !== "Practice") {
-          sessionsToPersist.push(session);
-        }
+        // Persist every session, including Practice, so it shows up under the race weekend card
+        sessionsToPersist.push(session);
         lastProcessedSession = session;
       }
     } catch (err) {
@@ -554,20 +608,12 @@ async function handleFileUpload(e) {
 
   if (lastProcessedSession) {
     if (sessionsToPersist.length > 0) {
-      // Persist only non-Practice uploaded sessions to the database
       await saveSessions(sessionsToPersist);
-
-      // Set the view to the last uploaded session (finding the persisted version to get its database ID if applicable)
-      if (lastProcessedSession.category !== "Practice") {
-        currentData =
-          allSessions.find(
-            (s) => s.session_date === lastProcessedSession.created_at,
-          ) || lastProcessedSession;
-      } else {
-        currentData = lastProcessedSession;
-      }
+      currentData =
+        allSessions.find(
+          (s) => s.session_date === lastProcessedSession.created_at,
+        ) || lastProcessedSession;
     } else {
-      // Practice sessions are treated as temporary previews and not saved to the database
       currentData = lastProcessedSession;
     }
 

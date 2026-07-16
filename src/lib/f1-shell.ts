@@ -112,6 +112,9 @@ export function trackSlug(name: string) {
 const BASE = (import.meta.env.BASE_URL || "/").replace(/\/+$/, "") + "/";
 
 export function trackMapUrl(name: string) {
+  return `${BASE}track-maps/${trackSlug(name)}.webp`;
+}
+export function trackMapFallbackUrl(name: string) {
   return `${BASE}track-maps/${trackSlug(name)}.png`;
 }
 export function appEmbedUrl(params: { season: number; track: string; view: string; cat?: string }) {
@@ -170,24 +173,33 @@ export function seasonStats(sessions: Session[]) {
   };
 }
 
-// Group by track + category so Sprint weekends surface both cards.
+// Group by track + category. Practice sessions fold into the Race weekend
+// (and are also mirrored into any Sprint bucket for that track).
 export function groupByTrack(sessions: Session[]) {
   const map = new Map<string, { track: string; category: string; sessions: Session[] }>();
+  const tracksWithSprint = new Set<string>();
+  for (const s of sessions) {
+    const cat = s.category || "Race";
+    if (cat === "Sprint" || cat === "Sprint Qualifying" || cat === "Sprint Shootout") {
+      tracksWithSprint.add(trackSlug(s.track_name));
+    }
+  }
   for (const s of sessions) {
     const track = trackSlug(s.track_name);
     if (!track) continue;
-    // Collapse Qualifying/Sprint Quali into their race weekend bucket.
     const cat = s.category || "Race";
-    const bucket =
+    const buckets: string[] =
       cat === "Sprint" || cat === "Sprint Qualifying" || cat === "Sprint Shootout"
-        ? "Sprint"
+        ? ["Sprint"]
         : cat === "Practice"
-        ? "Practice"
-        : "Race";
-    const key = `${track}::${bucket}`;
-    const entry = map.get(key) ?? { track: s.track_name, category: bucket, sessions: [] };
-    entry.sessions.push(s);
-    map.set(key, entry);
+        ? tracksWithSprint.has(track) ? ["Race", "Sprint"] : ["Race"]
+        : ["Race"];
+    for (const bucket of buckets) {
+      const key = `${track}::${bucket}`;
+      const entry = map.get(key) ?? { track: s.track_name, category: bucket, sessions: [] };
+      entry.sessions.push(s);
+      map.set(key, entry);
+    }
   }
   return Array.from(map.values());
 }
