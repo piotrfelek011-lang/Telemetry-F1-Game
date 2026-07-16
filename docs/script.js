@@ -47,12 +47,23 @@ function _embedSelectSession() {
   const wantedCat = EMBED_CAT ? String(EMBED_CAT).toLowerCase() : null;
   const seasonN = Number(EMBED_SEASON || currentSeason);
   const isPracticeView = EMBED_VIEW === "practice";
-  // For the practice view we pick a Practice session regardless of `cat`,
-  // so the "Race → Practice" link surfaces every uploaded practice.
+  // For the practice view we pick a Practice or Sprint session regardless of
+  // `cat`, so the "Race → Practice" link surfaces every uploaded practice
+  // AND the sprint for the same weekend.
+  const isPracticeLikeSession = (s) => {
+    const c = (s.category || "").toLowerCase();
+    const st = (s.session_type || "").toLowerCase();
+    return (
+      c === "practice" || c.startsWith("practice") ||
+      c === "sprint" || c === "sprint qualifying" || c === "sprint shootout" ||
+      /^p[123]$/.test(st) || st.includes("practice") || st.includes("fp") ||
+      st.includes("sprint")
+    );
+  };
   const match = allSessions.find((s) => {
-    if (s.season !== seasonN) return false;
+    if (Number(s.season) !== seasonN) return false;
     if ((s.track_name || "").toLowerCase() !== wanted) return false;
-    if (isPracticeView) return (s.category || "").toLowerCase() === "practice";
+    if (isPracticeView) return isPracticeLikeSession(s);
     return !wantedCat || (s.category || "").toLowerCase() === wantedCat;
   });
   if (match) {
@@ -67,19 +78,40 @@ function _embedSelectSession() {
 }
 
 // Render a session picker at the top of the practice section listing every
-// Practice session uploaded for this track so the user can view P1/P2/P3.
+// Practice (and Sprint) session uploaded for this track so the user can
+// switch between P1/P2/P3/Sprint.
 function _embedRenderPracticePicker() {
   const section = document.getElementById("section-practice");
   if (!section) return;
   const wanted = String(EMBED_TRACK || "").toLowerCase();
   const seasonN = Number(EMBED_SEASON || currentSeason);
+  const isPracticeLike = (s) => {
+    const c = (s.category || "").toLowerCase();
+    const st = (s.session_type || "").toLowerCase();
+    return (
+      c === "practice" || c.startsWith("practice") ||
+      c === "sprint" || c === "sprint qualifying" || c === "sprint shootout" ||
+      /^p[123]$/.test(st) || st.includes("practice") || st.includes("fp") ||
+      st.includes("sprint")
+    );
+  };
+  const orderKey = (s) => {
+    const c = (s.category || "").toLowerCase();
+    const st = (s.session_type || "").toLowerCase();
+    if (/^p1$/.test(st) || st.includes("practice 1") || st.includes("fp1")) return "1";
+    if (/^p2$/.test(st) || st.includes("practice 2") || st.includes("fp2")) return "2";
+    if (/^p3$/.test(st) || st.includes("practice 3") || st.includes("fp3")) return "3";
+    if (c === "sprint qualifying" || c === "sprint shootout") return "4";
+    if (c === "sprint") return "5";
+    return "9" + (s.session_type || "");
+  };
   const list = allSessions
     .filter((s) =>
-      s.season === seasonN &&
+      Number(s.season) === seasonN &&
       (s.track_name || "").toLowerCase() === wanted &&
-      (s.category || "").toLowerCase() === "practice",
+      isPracticeLike(s),
     )
-    .sort((a, b) => String(a.session_type || "").localeCompare(String(b.session_type || "")));
+    .sort((a, b) => orderKey(a).localeCompare(orderKey(b)));
 
   let picker = document.getElementById("embedPracticePicker");
   if (!picker) {
@@ -90,17 +122,28 @@ function _embedRenderPracticePicker() {
     if (body) body.prepend(picker); else section.prepend(picker);
   }
   if (list.length === 0) {
-    picker.innerHTML = '<div style="color:var(--secondary-text);font-size:0.9rem">No Practice sessions uploaded for this track yet. Upload a Practice_*.json to see the summary here.</div>';
+    const totalPract = allSessions.filter(isPracticeLike).length;
+    picker.innerHTML = `<div style="color:var(--secondary-text);font-size:0.9rem">No Practice or Sprint sessions uploaded for this track yet (season ${seasonN}, track "${wanted}"). Total practice/sprint sessions across all tracks: ${totalPract}. Upload a Practice_*.json or Sprint_*.json to see the summary here.</div>`;
     return;
   }
   const currentId = currentData && (currentData.id || currentData.created_at);
+  const labelFor = (s) => {
+    const st = s.session_type || "";
+    const c = (s.category || "").toLowerCase();
+    if (st) return st;
+    if (c === "sprint") return "Sprint";
+    if (c === "sprint qualifying" || c === "sprint shootout") return "Sprint Quali";
+    return "Practice";
+  };
   picker.innerHTML =
-    '<div style="width:100%;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary-text);margin-bottom:4px">Practice Sessions</div>' +
+    '<div style="width:100%;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--secondary-text);margin-bottom:4px">Practice & Sprint Sessions</div>' +
     list.map((s) => {
       const id = s.id || s.created_at;
-      const label = s.session_type || "Practice";
+      const label = labelFor(s);
       const isActive = String(id) === String(currentId);
-      return `<button type="button" data-sid="${id}" style="padding:8px 14px;border-radius:8px;border:1px solid ${isActive ? "#ef4444" : "rgba(255,255,255,0.15)"};background:${isActive ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.03)"};color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer">${label}</button>`;
+      const isSprint = (s.category || "").toLowerCase().startsWith("sprint");
+      const accent = isSprint ? "#f59e0b" : "#ef4444";
+      return `<button type="button" data-sid="${id}" style="padding:8px 14px;border-radius:8px;border:1px solid ${isActive ? accent : "rgba(255,255,255,0.15)"};background:${isActive ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.03)"};color:#fff;font-weight:700;font-size:0.85rem;cursor:pointer">${label}</button>`;
     }).join("");
   picker.querySelectorAll("button[data-sid]").forEach((btn) => {
     btn.addEventListener("click", () => {
