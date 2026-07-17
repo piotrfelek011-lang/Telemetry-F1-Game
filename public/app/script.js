@@ -1242,15 +1242,19 @@ async function saveSessions(sessions) {
     race_story: session.race_story || null,
   }));
 
-  // Overwrite: delete any existing row matching driver+track+season+category, then insert
+  // Overwrite: delete any existing row matching driver+track+season+category (+ session_type for Practice/Quali) then insert
   for (const row of dataToInsert) {
     try {
-      await db.from("telemetry_sessions").delete().match({
+      const match = {
         driver_name: row.driver_name,
         track_name: row.track_name,
         season: row.season,
         category: row.category,
-      });
+      };
+      // For sessions with distinct session_type (P1/P2/P3, Q1/Q2/Q3), scope
+      // the overwrite so uploading FP2 doesn't wipe FP1 for the same weekend.
+      if (row.session_type) match.session_type = row.session_type;
+      await db.from("telemetry_sessions").delete().match(match);
     } catch (err) {
       console.warn("Pre-delete for overwrite failed (continuing):", err);
     }
