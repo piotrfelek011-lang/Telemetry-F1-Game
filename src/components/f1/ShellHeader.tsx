@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
+import { supabase, displayNameFromSession } from "@/lib/supabase";
 
 export function titleCase(name: string) {
   return (name || "")
