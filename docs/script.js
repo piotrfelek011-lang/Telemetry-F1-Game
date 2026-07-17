@@ -1226,6 +1226,16 @@ async function saveSessions(sessions) {
     throw new Error("Database connection is still loading. Please try again in a moment.");
   }
 
+  // Attach the signed-in user so RLS accepts the insert.
+  let uid = null;
+  try {
+    const { data } = await db.auth.getUser();
+    uid = data?.user?.id || null;
+  } catch (e) { /* ignore */ }
+  if (!uid) {
+    throw new Error("You must be signed in to save sessions.");
+  }
+
   const dataToInsert = sessions.map((session) => ({
     driver_name: session.driver_name,
     track_name: session.track_name,
@@ -1240,6 +1250,7 @@ async function saveSessions(sessions) {
     stints: session.stints,
     results: session.results,
     race_story: session.race_story || null,
+    user_id: uid,
   }));
 
   // Overwrite: delete any existing row matching driver+track+season+category (+ session_type for Practice/Quali) then insert
@@ -4305,10 +4316,14 @@ async function saveDriverTeamsToDB(obj) {
     throw new Error("Database connection is still loading. Please try again in a moment.");
   }
 
+  const { data: userData } = await db.auth.getUser();
+  const uid = userData?.user?.id;
+  if (!uid) throw new Error("You must be signed in to save.");
   const rows = Object.entries(obj).map(([driver, team]) => ({
     season: currentSeason,
     driver_name: driver,
     team: team,
+    user_id: uid,
   }));
 
   // Upsert rows using season + driver_name as unique constraint
@@ -4412,9 +4427,12 @@ async function saveTrackNote(trackKey, notes) {
   }
   setNotesStatus("Saving…");
   try {
+    const { data: userData } = await client.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) { setNotesStatus("Sign in to save notes", true); return; }
     const { error } = await client
       .from("track_notes")
-      .upsert({ track_key: trackKey, notes, updated_at: new Date().toISOString() }, { onConflict: "track_key" });
+      .upsert({ track_key: trackKey, notes, updated_at: new Date().toISOString(), user_id: uid }, { onConflict: "track_key" });
     if (error) {
       console.error("track_notes save failed", error);
       setNotesStatus("Save failed: " + (error.message || "unknown"), true);
