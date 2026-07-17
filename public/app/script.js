@@ -4316,10 +4316,14 @@ async function saveDriverTeamsToDB(obj) {
     throw new Error("Database connection is still loading. Please try again in a moment.");
   }
 
+  const { data: userData } = await db.auth.getUser();
+  const uid = userData?.user?.id;
+  if (!uid) throw new Error("You must be signed in to save.");
   const rows = Object.entries(obj).map(([driver, team]) => ({
     season: currentSeason,
     driver_name: driver,
     team: team,
+    user_id: uid,
   }));
 
   // Upsert rows using season + driver_name as unique constraint
