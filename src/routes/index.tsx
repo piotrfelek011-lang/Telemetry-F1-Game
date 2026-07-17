@@ -85,7 +85,7 @@ function MainPage() {
           ))}
         </div>
 
-        <UploadPanel />
+        <UploadPanel season={season} />
 
         <StatsBar stats={stats} />
 
