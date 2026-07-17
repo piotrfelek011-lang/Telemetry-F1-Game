@@ -53,11 +53,11 @@ function _embedSelectSession() {
   const isPracticeLikeSession = (s) => {
     const c = (s.category || "").toLowerCase();
     const st = (s.session_type || "").toLowerCase();
+    // Only Practice sessions and the (race) Sprint. Exclude Qualifying and Sprint Shootout/Qualifying.
     return (
       c === "practice" || c.startsWith("practice") ||
-      c === "sprint" || c === "sprint qualifying" || c === "sprint shootout" ||
-      /^p[123]$/.test(st) || st.includes("practice") || st.includes("fp") ||
-      st.includes("sprint")
+      c === "sprint" ||
+      /^p[123]$/.test(st) || st.includes("practice") || st.includes("fp")
     );
   };
   const match = allSessions.find((s) => {
