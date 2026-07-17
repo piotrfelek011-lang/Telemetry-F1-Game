@@ -4427,9 +4427,12 @@ async function saveTrackNote(trackKey, notes) {
   }
   setNotesStatus("Saving…");
   try {
+    const { data: userData } = await client.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) { setNotesStatus("Sign in to save notes", true); return; }
     const { error } = await client
       .from("track_notes")
-      .upsert({ track_key: trackKey, notes, updated_at: new Date().toISOString() }, { onConflict: "track_key" });
+      .upsert({ track_key: trackKey, notes, updated_at: new Date().toISOString(), user_id: uid }, { onConflict: "track_key" });
     if (error) {
       console.error("track_notes save failed", error);
       setNotesStatus("Save failed: " + (error.message || "unknown"), true);
