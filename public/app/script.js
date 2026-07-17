@@ -1226,6 +1226,16 @@ async function saveSessions(sessions) {
     throw new Error("Database connection is still loading. Please try again in a moment.");
   }
 
+  // Attach the signed-in user so RLS accepts the insert.
+  let uid = null;
+  try {
+    const { data } = await db.auth.getUser();
+    uid = data?.user?.id || null;
+  } catch (e) { /* ignore */ }
+  if (!uid) {
+    throw new Error("You must be signed in to save sessions.");
+  }
+
   const dataToInsert = sessions.map((session) => ({
     driver_name: session.driver_name,
     track_name: session.track_name,
@@ -1240,6 +1250,7 @@ async function saveSessions(sessions) {
     stints: session.stints,
     results: session.results,
     race_story: session.race_story || null,
+    user_id: uid,
   }));
 
   // Overwrite: delete any existing row matching driver+track+season+category (+ session_type for Practice/Quali) then insert
