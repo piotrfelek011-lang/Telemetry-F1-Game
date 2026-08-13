@@ -44,13 +44,19 @@ function MainPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (cacheIsFresh() && cached) { setLoading(false); return; }
-    setLoading(sessions.length === 0);
-    fetchSessions()
-      .then((rows) => { if (!cancelled) setSessions(rows); })
-      .catch((e) => { if (!cancelled) setErr(String(e)); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    const refetch = () => {
+      setLoading(sessions.length === 0);
+      fetchSessions()
+        .then((rows) => { if (!cancelled) setSessions(rows); })
+        .catch((e) => { if (!cancelled) setErr(String(e)); })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    };
+    refetch();
+    const onMsg = (ev: MessageEvent) => {
+      if (ev?.data?.type === "f1-sessions-updated") refetch();
+    };
+    window.addEventListener("message", onMsg);
+    return () => { cancelled = true; window.removeEventListener("message", onMsg); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -196,9 +202,9 @@ function TrackCard({ season, track, category, sessions }: { season: number; trac
         <div className="absolute right-2 top-2 flex flex-wrap gap-1">
           {badgeAgg.gs && <Tag color="#c084fc">GS</Tag>}
           {badgeAgg.win && <Tag color="#ffd700">W</Tag>}
-          {badgeAgg.pole && <Tag color="#5ad1ff">P</Tag>}
           {badgeAgg.fl && <Tag color="#a855f7">FL</Tag>}
           {!badgeAgg.win && badgeAgg.podium && <Tag color="#cd7f32">P3</Tag>}
+           {badgeAgg.dnf && <Tag color="#ef4444">DNF</Tag>}
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">

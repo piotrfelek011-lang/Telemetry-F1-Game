@@ -34,7 +34,12 @@ export function setSavedSeason(n: number) {
 }
 
 const CACHE_KEY = "f1.sessions.cache.v1";
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 1000;
+
+export function clearSessionsCache() {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.removeItem(CACHE_KEY); } catch {}
+}
 
 export function loadCachedSessions(): Session[] | null {
   if (typeof window === "undefined") return null;
@@ -61,22 +66,32 @@ export function cacheIsFresh(): boolean {
   } catch { return false; }
 }
 
+export async function currentAccessToken(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem("sb-kbjjtiajugxvhoboqxwb-auth-token");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.access_token ?? parsed?.currentSession?.access_token ?? null;
+  } catch { return null; }
+}
+
 export async function fetchSessions(season?: number): Promise<Session[]> {
   const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
-  // Trim heavy columns from list queries; details fetched per-session inside the app iframe.
   url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_pos,starting_pos,created_at,session_date,race_story");
   url.searchParams.set("order", "session_date.desc");
   if (season != null) url.searchParams.set("season", `eq.${season}`);
+  const token = await currentAccessToken();
   const res = await fetch(url.toString(), {
     headers: {
       apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      Authorization: `Bearer ${token || SUPABASE_ANON_KEY}`,
     },
   });
   if (!res.ok) throw new Error(`Failed to load telemetry sessions (${res.status})`);
   const rows = await res.json();
   const mapped = rows.map(mapTelemetrySession);
-  if (season == null) saveCachedSessions(mapped);
+  if (season == null && token) saveCachedSessions(mapped);
   return mapped;
 }
 
@@ -145,7 +160,7 @@ export function appManageUrl() {
 const TRACK_FLAGS: Record<string, string> = {
   melbourne: "🇦🇺", shanghai: "🇨🇳", suzuka: "🇯🇵", sakhir: "🇧🇭",
   jeddah: "🇸🇦", miami: "🇺🇸", imola: "🇮🇹", monaco: "🇲🇨",
-  catalunya: "🇪🇸", montreal: "🇨🇦", austria: "🇦🇹", silverstone: "🇬🇧",
+  catalunya: "🇪🇸", montreal: "🇨🇦", austria: "🇦🇹", austria_reverse: "🇦🇹", silverstone: "🇬🇧",
   spa: "🇧🇪", hungaroring: "🇭🇺", zandvoort: "🇳🇱", monza: "🇮🇹",
   madrid: "🇪🇸", baku: "🇦🇿", singapore: "🇸🇬", texas: "🇺🇸",
   austin: "🇺🇸", mexico: "🇲🇽", mexico_city: "🇲🇽", interlagos: "🇧🇷",
@@ -157,16 +172,40 @@ export function trackFlag(name: string) {
   return TRACK_FLAGS[trackSlug(name)] || "🏁";
 }
 
-export type SessionBadges = { win?: boolean; pole?: boolean; fl?: boolean; podium?: boolean; gs?: boolean };
+export type SessionBadges = { win?: boolean; pole?: boolean; fl?: boolean; podium?: boolean; gs?: boolean; dnf?: boolean };
 export function badgesFor(s: Session): SessionBadges {
+  const cat = (s.category || "").toLowerCase();
+  const isRaceLike = cat === "race" || cat === "sprint";
   const finish = Number(s.finishing_position);
   const start = Number(s.starting_position);
+  // Weekend tags come from the actual Race/Sprint result. Qualifying files
+  // can contain provisional positions that do not reflect grid penalties.
+  if (!isRaceLike) return {};
+  const playerName = String(s.race_story?.player_name || s.driver_name || "").toUpperCase();
+  const playerResult = Array.isArray(s.race_story?.classification)
+    ? s.race_story.classification.find(
+        (entry: any) => String(entry?.name || "").toUpperCase() === playerName,
+      )
+    : null;
+  const status = String(playerResult?.status || "").toUpperCase();
+  const dnf = Boolean(
+    playerResult &&
+      (playerResult.is_dnf === true || (status.length > 0 && !/FINISHED|ACTIVE/.test(status))),
+  );
+  const classifiedFinish = Number(playerResult?.position || finish);
+  const gridEntry = Array.isArray(s.race_story?.starting_grid)
+    ? s.race_story.starting_grid.find(
+        (entry: any) => String(entry?.name || "").toUpperCase() === playerName,
+      )
+    : null;
+  const classifiedStart = Number(gridEntry?.position || start);
   return {
-    win: finish === 1,
-    pole: start === 1,
-    podium: finish >= 1 && finish <= 3,
+    win: !dnf && classifiedFinish === 1,
+    pole: classifiedStart === 1,
+    podium: !dnf && classifiedFinish >= 1 && classifiedFinish <= 3,
     fl: !!(s.race_story?.player_fastest_lap ?? false),
-    gs: !!(s.race_story?.grand_slam ?? false),
+    gs: !dnf && !!(s.race_story?.grand_slam ?? false),
+    dnf,
   };
 }
 
