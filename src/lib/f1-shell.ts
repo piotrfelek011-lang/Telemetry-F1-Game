@@ -77,10 +77,13 @@ export async function currentAccessToken(): Promise<string | null> {
 }
 
 export async function fetchSessions(season?: number): Promise<Session[]> {
+  const { getActiveCareer } = await import("./career");
+  const career = getActiveCareer();
   const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
-  url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_pos,starting_pos,created_at,session_date,race_story");
+  url.searchParams.set("select", "id,season,driver_name,track_name,category,session_type,finishing_pos,starting_pos,created_at,session_date,race_story,career_slot");
   url.searchParams.set("order", "session_date.desc");
   if (season != null) url.searchParams.set("season", `eq.${season}`);
+  if (career) url.searchParams.set("career_slot", `eq.${career}`);
   const token = await currentAccessToken();
   const res = await fetch(url.toString(), {
     headers: {
@@ -94,6 +97,26 @@ export async function fetchSessions(season?: number): Promise<Session[]> {
   if (season == null && token) saveCachedSessions(mapped);
   return mapped;
 }
+
+// Count sessions per career slot (used by the career chooser page).
+export async function fetchCareerCounts(): Promise<Record<string, number>> {
+  const token = await currentAccessToken();
+  if (!token) return {};
+  const url = new URL(`${SUPABASE_URL}/rest/v1/telemetry_sessions`);
+  url.searchParams.set("select", "career_slot");
+  const res = await fetch(url.toString(), {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return {};
+  const rows: { career_slot: string | null }[] = await res.json();
+  const out: Record<string, number> = {};
+  for (const r of rows) {
+    const key = r.career_slot || "unassigned";
+    out[key] = (out[key] ?? 0) + 1;
+  }
+  return out;
+}
+
 
 export function titleCaseTrack(name: string) {
   return (name || "")

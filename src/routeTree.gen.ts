@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CareersRouteImport } from './routes/careers'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SeasonSeasonTeammateRouteImport } from './routes/season.$season.teammate'
 import { Route as SeasonSeasonTrackTrackRouteImport } from './routes/season.$season.track.$track'
@@ -25,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CareersRoute = CareersRouteImport.update({
+  id: '/careers',
+  path: '/careers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -58,6 +64,7 @@ const SeasonSeasonTrackTrackViewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/careers': typeof CareersRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/season/$season/teammate': typeof SeasonSeasonTeammateRoute
   '/season/$season/track/$track': typeof SeasonSeasonTrackTrackRouteWithChildren
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/careers': typeof CareersRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/season/$season/teammate': typeof SeasonSeasonTeammateRoute
   '/season/$season/track/$track/$view': typeof SeasonSeasonTrackTrackViewRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/careers': typeof CareersRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/season/$season/teammate': typeof SeasonSeasonTeammateRoute
   '/season/$season/track/$track': typeof SeasonSeasonTrackTrackRouteWithChildren
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/careers'
     | '/sitemap.xml'
     | '/season/$season/teammate'
     | '/season/$season/track/$track'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/careers'
     | '/sitemap.xml'
     | '/season/$season/teammate'
     | '/season/$season/track/$track/$view'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/careers'
     | '/sitemap.xml'
     | '/season/$season/teammate'
     | '/season/$season/track/$track'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CareersRoute: typeof CareersRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SeasonSeasonTeammateRoute: typeof SeasonSeasonTeammateRoute
   SeasonSeasonTrackTrackRoute: typeof SeasonSeasonTrackTrackRouteWithChildren
@@ -133,6 +146,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/careers': {
+      id: '/careers'
+      path: '/careers'
+      fullPath: '/careers'
+      preLoaderRoute: typeof CareersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -192,6 +212,7 @@ const SeasonSeasonTrackTrackRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CareersRoute: CareersRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SeasonSeasonTeammateRoute: SeasonSeasonTeammateRoute,
   SeasonSeasonTrackTrackRoute: SeasonSeasonTrackTrackRouteWithChildren,

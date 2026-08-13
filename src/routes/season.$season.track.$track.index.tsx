@@ -165,8 +165,10 @@ function TrackPage() {
           if (!quiet) setSaveStatus("local"); // anonymous → local only
           return;
         }
-        // Per-user lookup then update/insert. Upserting on `track_key`
-        // alone can collide with another user's row under RLS and fail.
+        // Per-user lookup then update/insert. RLS already scopes reads to the
+        // signed-in user, but the table can still hold a legacy row with the
+        // same `track_key` owned by nobody/someone else — inserting then hits
+        // a duplicate-key error, which is what made saves fail ~50% of tracks.
         const { data: existing } = await supabase
           .from("track_notes")
           .select("id")
@@ -181,9 +183,18 @@ function TrackPage() {
           updated_at: new Date().toISOString(),
           user_id: uid,
         };
-        const { error } = existing?.id
-          ? await supabase.from("track_notes").update(payload).eq("id", existing.id)
-          : await supabase.from("track_notes").insert(payload);
+        let error = existing?.id
+          ? (await supabase.from("track_notes").update(payload).eq("id", existing.id)).error
+          : (await supabase.from("track_notes").insert(payload)).error;
+        if (error && !existing?.id) {
+          // Duplicate key on track_key → a row already exists; take it over.
+          const retry = await supabase
+            .from("track_notes")
+            .update(payload)
+            .eq("track_key", dbKey)
+            .select("id");
+          if (!retry.error && retry.data && retry.data.length) error = null;
+        }
         if (error) {
           console.warn("track_notes save failed", error);
           if (!quiet && sequence === saveSequence.current) setSaveStatus("error");
@@ -191,6 +202,7 @@ function TrackPage() {
         }
         if (dbKey === trackKeyRef.current) lastSaved.current = value;
         if (!quiet && sequence === saveSequence.current) setSaveStatus("saved");
+
       } catch (err) {
         console.warn("track_notes save error", err);
         if (!quiet && sequence === saveSequence.current) setSaveStatus("error");
