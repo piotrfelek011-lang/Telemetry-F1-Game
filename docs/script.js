@@ -1198,16 +1198,29 @@ function processTelemetryData(data) {
   return results;
 }
 
+// Active career slot (driver-1..3 / team-1..3), chosen in the React shell.
+function getCareerSlot() {
+  try {
+    const v = window.localStorage.getItem("f1.career");
+    return /^(driver|team)-[123]$/.test(v || "") ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function loadSavedSessions() {
   try {
     const db = getSupabaseClient();
     if (!db) return;
 
-    const { data: sessions, error } = await db
+    let query = db
       .from("telemetry_sessions")
       .select("*")
       .order("season", { ascending: true })
       .order("session_date", { ascending: true });
+    const _careerSlot = getCareerSlot();
+    if (_careerSlot) query = query.eq("career_slot", _careerSlot);
+    const { data: sessions, error } = await query;
 
     if (error) throw error;
 
@@ -1282,6 +1295,7 @@ async function saveSessions(sessions) {
     results: session.results,
     race_story: session.race_story || null,
     user_id: uid,
+    career_slot: getCareerSlot(),
   }));
 
   // Overwrite: delete any existing row matching driver+track+season+category (+ session_type for Practice/Quali) then insert
@@ -1293,6 +1307,7 @@ async function saveSessions(sessions) {
         season: row.season,
         category: row.category,
       };
+      if (row.career_slot) match.career_slot = row.career_slot;
       // For sessions with distinct session_type (P1/P2/P3, Q1/Q2/Q3), scope
       // the overwrite so uploading FP2 doesn't wipe FP1 for the same weekend.
       if (row.session_type) match.session_type = row.session_type;
