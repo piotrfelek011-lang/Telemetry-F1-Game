@@ -26,7 +26,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/" });
+      if (data.session) navigate({ to: "/careers" });
     });
   }, [navigate]);
 
@@ -81,7 +81,7 @@ function AuthPage() {
           throw error;
         }
       }
-      navigate({ to: "/" });
+      navigate({ to: "/careers" });
     } catch (e: any) {
       setErr(e?.message || "Sign-in failed");
     } finally {
