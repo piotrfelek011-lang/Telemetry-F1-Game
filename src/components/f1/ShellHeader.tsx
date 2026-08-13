@@ -33,6 +33,7 @@ export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; par
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <CareerChip />
           <Link
             to="/"
             className="rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
@@ -45,6 +46,23 @@ export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; par
     </header>
   );
 }
+
+function CareerChip() {
+  const [label, setLabel] = useState("");
+  useEffect(() => {
+    import("@/lib/career").then(({ activeCareerLabel }) => setLabel(activeCareerLabel()));
+  }, []);
+  return (
+    <Link
+      to="/careers"
+      title="Switch career slot"
+      className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/20"
+    >
+      {label || "Career"}
+    </Link>
+  );
+}
+
 
 function UserMenu() {
   const navigate = useNavigate();
