@@ -386,6 +386,34 @@ function TrackPage() {
                 {cat && <span className="ml-3 text-lg font-bold text-white/60">{cat}</span>}
               </h1>
             </div>
+            {(prevSeason || nextSeason) && (
+              <div className="mb-3 flex flex-wrap items-center gap-2" suppressHydrationWarning>
+                <span className="text-[11px] uppercase tracking-widest text-white/40">
+                  Same track
+                </span>
+                {prevSeason && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(prevSeason), track: trackSlug(track) }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    ← Season {prevSeason}
+                  </Link>
+                )}
+                {nextSeason && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(nextSeason), track: trackSlug(track) }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    Season {nextSeason} →
+                  </Link>
+                )}
+              </div>
+            )}
+
             <div className="mb-3 flex flex-wrap gap-2" suppressHydrationWarning>
               {cats.map((c) => (
                 <span
