@@ -14,6 +14,7 @@ import {
   trackSlug,
   titleCaseTrack,
   badgesFor,
+  racePosition,
   appEmbedUrl,
   type Session,
 } from "@/lib/f1-shell";
@@ -174,6 +175,8 @@ function TrackCard({ season, track, category, sessions }: { season: number; trac
     const b = badgesFor(s);
     Object.entries(b).forEach(([k, v]) => { if (v) badgeAgg[k] = true; });
   });
+  const positions = sessions.map(racePosition).filter((n): n is number => !!n);
+  const bestPos = positions.length ? Math.min(...positions) : null;
   const [imgSrc, setImgSrc] = useState(trackMapUrl(track));
   const [imgOk, setImgOk] = useState(true);
   const triedFallback = useMemo(() => ({ v: false }), [track]);
@@ -206,7 +209,7 @@ function TrackCard({ season, track, category, sessions }: { season: number; trac
           {badgeAgg.gs && <Tag color="#c084fc">GS</Tag>}
           {badgeAgg.win && <Tag color="#ffd700">W</Tag>}
           {badgeAgg.fl && <Tag color="#a855f7">FL</Tag>}
-          {!badgeAgg.win && badgeAgg.podium && <Tag color="#cd7f32">P3</Tag>}
+          {!badgeAgg.win && badgeAgg.podium && bestPos && <Tag color="#cd7f32">P{bestPos}</Tag>}
            {badgeAgg.dnf && <Tag color="#ef4444">DNF</Tag>}
         </div>
       </div>

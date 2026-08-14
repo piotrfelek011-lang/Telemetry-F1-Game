@@ -9,6 +9,7 @@ import {
   trackMapFallbackUrl,
   titleCaseTrack,
   badgesFor,
+  racePosition,
   type Session,
 } from "@/lib/f1-shell";
 import { supabase } from "@/lib/supabase";
@@ -145,6 +146,10 @@ function TrackPage() {
     ? `${race.session_info.track_name ?? canonicalName} · ${race.session_info.total_laps ?? "?"} laps · ${race.session_info.weather ?? ""}`
     : `Session data for ${canonicalName}`;
 
+  const bestRacePos = (() => {
+    const ps = trackSessions.map(racePosition).filter((n): n is number => !!n);
+    return ps.length ? Math.min(...ps) : null;
+  })();
   const badgeAgg: Record<string, boolean> = {};
   trackSessions.forEach((s) => {
     const b = badgesFor(s);
@@ -425,6 +430,9 @@ function TrackPage() {
               ))}
               {badgeAgg.gs && <Tag color="#c084fc">Grand Slam</Tag>}
               {badgeAgg.win && <Tag color="#ffd700">Win</Tag>}
+              {!badgeAgg.win && badgeAgg.podium && bestRacePos && (
+                <Tag color="#cd7f32">P{bestRacePos}</Tag>
+              )}
               {badgeAgg.pole && <Tag color="#5ad1ff">Pole</Tag>}
               {badgeAgg.fl && <Tag color="#a855f7">Fastest Lap</Tag>}
             </div>
