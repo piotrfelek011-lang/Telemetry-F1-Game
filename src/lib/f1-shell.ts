@@ -196,14 +196,29 @@ export function trackFlag(name: string) {
 }
 
 export type SessionBadges = { win?: boolean; pole?: boolean; fl?: boolean; podium?: boolean; gs?: boolean; dnf?: boolean };
-export function badgesFor(s: Session): SessionBadges {
+
+// True only for sessions whose finishing position is an actual race result.
+// The uploader guesses `category` from the filename, so a Sprint Qualifying
+// file named "..._sprint.json" can land as category "Sprint" while carrying
+// qualifying positions. `session_type` comes from the game itself, so it wins.
+export function isRaceResultSession(s: Session): "Race" | "Sprint" | null {
   const cat = (s.category || "").toLowerCase();
-  const isRaceLike = cat === "race" || cat === "sprint";
+  const st = (s.session_type || "").toLowerCase();
+  if (/quali|shootout|practice|time.?trial|^p[123]$|^q[123]$|^fp[123]$/.test(st)) return null;
+  if (cat.includes("quali") || cat.includes("shootout") || cat === "practice" || cat === "time trial")
+    return null;
+  const isSprint = cat === "sprint" || st.includes("sprint");
+  if (cat === "race" || st.includes("race")) return isSprint ? "Sprint" : "Race";
+  if (isSprint) return "Sprint";
+  return null;
+}
+
+export function badgesFor(s: Session): SessionBadges {
   const finish = Number(s.finishing_position);
   const start = Number(s.starting_position);
   // Weekend tags come from the actual Race/Sprint result. Qualifying files
   // can contain provisional positions that do not reflect grid penalties.
-  if (!isRaceLike) return {};
+  if (!isRaceResultSession(s)) return {};
   const playerName = String(s.race_story?.player_name || s.driver_name || "").toUpperCase();
   const playerResult = Array.isArray(s.race_story?.classification)
     ? s.race_story.classification.find(
@@ -232,21 +247,35 @@ export function badgesFor(s: Session): SessionBadges {
   };
 }
 
+// Finishing position from the classification when available (grid penalties /
+// post-race changes), falling back to the stored value.
+export function racePosition(s: Session): number | null {
+  if (!isRaceResultSession(s)) return null;
+  const b = badgesFor(s);
+  if (b.dnf) return null;
+  const playerName = String(s.race_story?.player_name || s.driver_name || "").toUpperCase();
+  const entry = Array.isArray(s.race_story?.classification)
+    ? s.race_story.classification.find(
+        (e: any) => String(e?.name || "").toUpperCase() === playerName,
+      )
+    : null;
+  const pos = Number(entry?.position || s.finishing_position);
+  return Number.isFinite(pos) && pos > 0 ? pos : null;
+}
+
 export function seasonStats(sessions: Session[]) {
-  const races = sessions.filter((s) => s.category === "Race");
-  const sprints = sessions.filter((s) => s.category === "Sprint");
+  const races = sessions.filter((s) => isRaceResultSession(s) === "Race");
+  const sprints = sessions.filter((s) => isRaceResultSession(s) === "Sprint");
   return {
-    raceWins: races.filter((s) => Number(s.finishing_position) === 1).length,
-    sprintWins: sprints.filter((s) => Number(s.finishing_position) === 1).length,
-    gpPoles: races.filter((s) => Number(s.starting_position) === 1).length,
-    sprintPoles: sprints.filter((s) => Number(s.starting_position) === 1).length,
-    podiums: races.filter((s) => {
-      const p = Number(s.finishing_position);
-      return p >= 1 && p <= 3;
-    }).length,
+    raceWins: races.filter((s) => badgesFor(s).win).length,
+    sprintWins: sprints.filter((s) => badgesFor(s).win).length,
+    gpPoles: races.filter((s) => badgesFor(s).pole).length,
+    sprintPoles: sprints.filter((s) => badgesFor(s).pole).length,
+    podiums: races.filter((s) => badgesFor(s).podium).length,
     fastestLaps: sessions.filter((s) => badgesFor(s).fl).length,
   };
 }
+
 
 // Group by track + category. Practice sessions fold into the Race weekend
 // (and are also mirrored into any Sprint bucket for that track).
