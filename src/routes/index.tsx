@@ -73,23 +73,26 @@ function MainPage() {
     <>
       <ShellHeader crumbs={[{ label: `Season ${season}` }]} />
       <ShellPage>
-        <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="mb-4 flex flex-col items-center gap-2">
           <span className="text-xs uppercase tracking-widest text-white/50">Season</span>
-          {SEASONS.map((n) => (
-            <button
-              key={n}
-              onClick={() => pick(n)}
-              className={
-                "rounded-md border px-3 py-1.5 text-sm font-semibold transition " +
-                (season === n
-                  ? "border-red-500 bg-red-500 text-white"
-                  : "border-white/15 text-white/70 hover:border-white/40")
-              }
-            >
-              S{n}
-            </button>
-          ))}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {SEASONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => pick(n)}
+                className={
+                  "rounded-md border px-3 py-1.5 text-sm font-semibold transition " +
+                  (season === n
+                    ? "border-red-500 bg-red-500 text-white"
+                    : "border-white/15 text-white/70 hover:border-white/40")
+                }
+              >
+                S{n}
+              </button>
+            ))}
+          </div>
         </div>
+
 
         <UploadPanel season={season} />
 
