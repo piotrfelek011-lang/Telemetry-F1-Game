@@ -82,9 +82,10 @@ function TrackPage() {
   useEffect(() => {
     const cached = loadCachedSessions();
     if (cached) setSessions(cached);
-    fetchSessions(seasonN)
+    fetchSessions()
       .then(setSessions)
       .catch(() => {});
+
   }, [seasonN]);
 
   // Load persisted ordering
@@ -120,6 +121,23 @@ function TrackPage() {
     [sessions, track, seasonN, cat],
   );
   const canonicalName = trackSessions[0]?.track_name ?? track;
+  // Seasons (other than this one) that contain a track with the same name.
+  const sameTrackSeasons = useMemo(() => {
+    const set = new Set<number>();
+    sessions.forEach((s) => {
+      if (trackSlug(s.track_name) === trackSlug(track)) set.add(Number(s.season));
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [sessions, track]);
+  const prevSeason = useMemo(
+    () => [...sameTrackSeasons].reverse().find((n) => n < seasonN),
+    [sameTrackSeasons, seasonN],
+  );
+  const nextSeason = useMemo(
+    () => sameTrackSeasons.find((n) => n > seasonN),
+    [sameTrackSeasons, seasonN],
+  );
+
   const displayName = titleCaseTrack(canonicalName);
   const cats = Array.from(new Set(trackSessions.map((s) => s.category).filter(Boolean)));
   const race = trackSessions.find((s) => s.category === "Race");
@@ -368,6 +386,34 @@ function TrackPage() {
                 {cat && <span className="ml-3 text-lg font-bold text-white/60">{cat}</span>}
               </h1>
             </div>
+            {(prevSeason || nextSeason) && (
+              <div className="mb-3 flex flex-wrap items-center gap-2" suppressHydrationWarning>
+                <span className="text-[11px] uppercase tracking-widest text-white/40">
+                  Same track
+                </span>
+                {prevSeason && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(prevSeason), track: trackSlug(track) }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    ← Season {prevSeason}
+                  </Link>
+                )}
+                {nextSeason && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(nextSeason), track: trackSlug(track) }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    Season {nextSeason} →
+                  </Link>
+                )}
+              </div>
+            )}
+
             <div className="mb-3 flex flex-wrap gap-2" suppressHydrationWarning>
               {cats.map((c) => (
                 <span

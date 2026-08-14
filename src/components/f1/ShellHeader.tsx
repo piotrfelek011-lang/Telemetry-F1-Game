@@ -14,7 +14,7 @@ export function ShellHeader({ crumbs }: { crumbs: { label: string; to?: any; par
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0f]/95 backdrop-blur">
       <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 text-lg font-black tracking-tight text-white hover:text-red-400">
+        <Link to="/careers" className="flex items-center gap-2 text-lg font-black tracking-tight text-white hover:text-red-400">
           <span>🏎️</span>
           <span>F1 Telemetry</span>
         </Link>
