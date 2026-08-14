@@ -121,6 +121,23 @@ function TrackPage() {
     [sessions, track, seasonN, cat],
   );
   const canonicalName = trackSessions[0]?.track_name ?? track;
+  // Seasons (other than this one) that contain a track with the same name.
+  const sameTrackSeasons = useMemo(() => {
+    const set = new Set<number>();
+    sessions.forEach((s) => {
+      if (trackSlug(s.track_name) === trackSlug(track)) set.add(Number(s.season));
+    });
+    return Array.from(set).sort((a, b) => a - b);
+  }, [sessions, track]);
+  const prevSeason = useMemo(
+    () => [...sameTrackSeasons].reverse().find((n) => n < seasonN),
+    [sameTrackSeasons, seasonN],
+  );
+  const nextSeason = useMemo(
+    () => sameTrackSeasons.find((n) => n > seasonN),
+    [sameTrackSeasons, seasonN],
+  );
+
   const displayName = titleCaseTrack(canonicalName);
   const cats = Array.from(new Set(trackSessions.map((s) => s.category).filter(Boolean)));
   const race = trackSessions.find((s) => s.category === "Race");
