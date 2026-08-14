@@ -51,46 +51,52 @@ function CareersPage() {
           Switch slots any time from the header.
         </p>
 
-        {groups.map((g) => (
-          <section key={g.type} className="mt-8">
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-white/60">
-              {g.icon} {g.title} <span className="ml-2 font-normal normal-case tracking-normal text-white/35">{g.blurb}</span>
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {CAREER_SLOTS.filter((s) => s.type === g.type).map((s) => {
-                const n = counts[s.id] ?? 0;
-                const isActive = active === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => choose(s)}
-                    className={
-                      "flex flex-col items-start gap-2 rounded-lg border p-4 text-left transition hover:-translate-y-0.5 " +
-                      (isActive
-                        ? "border-red-500 bg-red-500/10"
-                        : "border-white/10 bg-white/[0.03] hover:border-red-500/60")
-                    }
-                  >
-                    <span className="text-xs font-black uppercase tracking-widest text-white/50">
-                      Slot {s.index}
-                    </span>
-                    <span className="text-lg font-bold">
-                      {g.type === "driver" ? "Driver" : "My Team"} {s.index}
-                    </span>
-                    <span className="text-xs text-white/55">
-                      {n > 0 ? `${n} session${n === 1 ? "" : "s"}` : "Empty — upload to start"}
-                    </span>
-                    {isActive && (
-                      <span className="rounded-sm bg-red-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                        Active
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {groups.map((g) => (
+            <section key={g.type}>
+              <h2 className="mb-3 text-sm font-bold uppercase tracking-widest text-white/60">
+                {g.icon} {g.title}
+                <span className="ml-2 block font-normal normal-case tracking-normal text-white/35">{g.blurb}</span>
+              </h2>
+              <div className="flex flex-col gap-3">
+                {CAREER_SLOTS.filter((s) => s.type === g.type).map((s) => {
+                  const n = counts[s.id] ?? 0;
+                  const isActive = active === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => choose(s)}
+                      className={
+                        "flex items-center gap-3 rounded-lg border p-4 text-left transition hover:-translate-y-0.5 " +
+                        (isActive
+                          ? "border-red-500 bg-red-500/10"
+                          : "border-white/10 bg-white/[0.03] hover:border-red-500/60")
+                      }
+                    >
+                      <span className="text-xs font-black uppercase tracking-widest text-white/50">
+                        Slot {s.index}
                       </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+                      <span className="flex flex-col">
+                        <span className="text-lg font-bold">
+                          {g.type === "driver" ? "Driver" : "My Team"} {s.index}
+                        </span>
+                        <span className="text-xs text-white/55">
+                          {n > 0 ? `${n} session${n === 1 ? "" : "s"}` : "Empty — upload to start"}
+                        </span>
+                      </span>
+                      {isActive && (
+                        <span className="ml-auto rounded-sm bg-red-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                          Active
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+
 
         {(counts["unassigned"] ?? 0) > 0 && (
           <p className="mt-8 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
