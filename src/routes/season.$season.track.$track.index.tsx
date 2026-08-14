@@ -82,9 +82,10 @@ function TrackPage() {
   useEffect(() => {
     const cached = loadCachedSessions();
     if (cached) setSessions(cached);
-    fetchSessions(seasonN)
+    fetchSessions()
       .then(setSessions)
       .catch(() => {});
+
   }, [seasonN]);
 
   // Load persisted ordering
