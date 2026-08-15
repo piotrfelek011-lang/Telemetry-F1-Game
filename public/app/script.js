@@ -4067,6 +4067,11 @@ function renderStandingsTable() {
   } catch (err) {
     console.error("Failed to render records", err);
   }
+  try {
+    renderSeasonProgress();
+  } catch (err) {
+    console.error("Failed to render season progress", err);
+  }
 }
 
 // ------- All-time Records / Stats -------
