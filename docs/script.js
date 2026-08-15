@@ -6266,6 +6266,12 @@ function renderSeasonProgress() {
     (a, b) => src.points[b][series.labels.length - 1] - src.points[a][series.labels.length - 1],
   );
 
+  // Default: all lines hidden until you explicitly choose who to display.
+  if (progressHidden[scope].size === 0 && keys.length > 0) {
+    keys.forEach((k) => progressHidden[scope].add(k));
+  }
+
+
   const toggles = document.getElementById("progressToggles");
   if (toggles) {
     toggles.innerHTML = keys
