@@ -2765,3 +2765,47 @@ body.embed-upload .download-btn.small:hover {
   .sg-right { margin-left: 0; }
   .sg-time { font-size: 0.74rem; }
 }
+
+/* ---- Season Progress ---- */
+.progress-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 16px;
+}
+.progress-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.progress-chip:hover { border-color: var(--chip-color); }
+.progress-chip.is-off { opacity: 0.4; text-decoration: line-through; }
+.progress-swatch {
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.progress-scope-tabs .progress-scope.active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.18);
+}
+#section-progress .chart-container { height: 420px; }
+.progress-scope-tabs .progress-scope {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ddd;
+}
+.progress-scope-tabs .progress-scope.active {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}

@@ -4067,6 +4067,11 @@ function renderStandingsTable() {
   } catch (err) {
     console.error("Failed to render records", err);
   }
+  try {
+    renderSeasonProgress();
+  } catch (err) {
+    console.error("Failed to render season progress", err);
+  }
 }
 
 // ------- All-time Records / Stats -------
@@ -6092,4 +6097,238 @@ function renderStartingGrid() {
       <div class="sg-grid">${tiles}</div>
       <div class="sg-startline">START / FINISH</div>
     </div>`;
+}
+
+// ---------------------------------------------------------------
+// Season Progress: points + championship position across rounds
+// ---------------------------------------------------------------
+let progressScope = "drivers";
+const progressHidden = { drivers: new Set(), teams: new Set() };
+
+function progressBuildSeries() {
+  const scoring = allSessions
+    .filter(
+      (s) =>
+        s.season === currentSeason &&
+        ["race", "sprint"].includes((s.category || "").toLowerCase()),
+    )
+    .sort(sortSessionsByCalendar);
+  if (!scoring.length) return null;
+
+  const teams = getDriverTeams() || {};
+  const labels = [];
+  const driverPoints = {}; // name -> cumulative array
+  const driverTotals = {};
+
+  scoring.forEach((session, idx) => {
+    const code = (session.track_code || session.track_name || "")
+      .toString()
+      .slice(0, 3)
+      .toUpperCase();
+    const kind = (session.category || "").toLowerCase() === "sprint" ? "S" : "R";
+    labels.push(`R${idx + 1} ${code}${kind === "S" ? " (S)" : ""}`);
+
+    const dnfSet = new Set();
+    (session.race_story?.classification || []).forEach((e) => {
+      const isDNF = e.is_dnf || (e.status && !/FINISHED/i.test(e.status));
+      if (isDNF && e.name) dnfSet.add(String(e.name).toUpperCase());
+    });
+
+    (session.results || []).forEach((res) => {
+      const name = res.name;
+      if (!name) return;
+      if (!driverTotals[name]) {
+        driverTotals[name] = 0;
+        driverPoints[name] = new Array(idx).fill(0);
+      }
+      const pos = parseInt(res.position);
+      let pts = 0;
+      if (!dnfSet.has(String(name).toUpperCase())) {
+        pts =
+          kind === "S"
+            ? [0, 8, 7, 6, 5, 4, 3, 2, 1][pos] || 0
+            : [0, 25, 18, 15, 12, 10, 8, 6, 4, 2, 1][pos] || 0;
+      }
+      driverTotals[name] += pts;
+    });
+
+    Object.keys(driverTotals).forEach((name) => {
+      driverPoints[name] = driverPoints[name] || new Array(idx).fill(0);
+      while (driverPoints[name].length < idx) driverPoints[name].push(0);
+      driverPoints[name][idx] = driverTotals[name];
+    });
+  });
+
+  const rounds = labels.length;
+  Object.keys(driverPoints).forEach((n) => {
+    while (driverPoints[n].length < rounds)
+      driverPoints[n].push(driverPoints[n][driverPoints[n].length - 1] || 0);
+  });
+
+  // Team cumulative points
+  const teamPoints = {};
+  Object.keys(driverPoints).forEach((name) => {
+    const team = teams[name] || "Unassigned";
+    if (!teamPoints[team]) teamPoints[team] = new Array(rounds).fill(0);
+    for (let i = 0; i < rounds; i++) teamPoints[team][i] += driverPoints[name][i];
+  });
+
+  const toPositions = (map) => {
+    const keys = Object.keys(map);
+    const out = {};
+    keys.forEach((k) => (out[k] = []));
+    for (let i = 0; i < rounds; i++) {
+      const ranked = keys
+        .slice()
+        .sort((a, b) => map[b][i] - map[a][i] || a.localeCompare(b));
+      ranked.forEach((k, idx) => out[k].push(idx + 1));
+    }
+    return out;
+  };
+
+  // Driver styling: team colour, second driver of the team dashed
+  const seenPerTeam = {};
+  const driverStyle = {};
+  Object.keys(driverPoints)
+    .sort((a, b) => driverPoints[b][rounds - 1] - driverPoints[a][rounds - 1])
+    .forEach((name) => {
+      const team = teams[name] || "Unassigned";
+      seenPerTeam[team] = (seenPerTeam[team] || 0) + 1;
+      driverStyle[name] = {
+        color: teamColorFor(team),
+        dash: seenPerTeam[team] > 1 ? [6, 5] : [],
+      };
+    });
+
+  return {
+    labels,
+    drivers: {
+      points: driverPoints,
+      positions: toPositions(driverPoints),
+      style: driverStyle,
+    },
+    teams: {
+      points: teamPoints,
+      positions: toPositions(teamPoints),
+      style: Object.keys(teamPoints).reduce((acc, t) => {
+        acc[t] = { color: teamColorFor(t), dash: [] };
+        return acc;
+      }, {}),
+    },
+  };
+}
+
+function progressDatasets(scope, series, kind) {
+  const src = series[scope];
+  const map = kind === "points" ? src.points : src.positions;
+  const hidden = progressHidden[scope];
+  return Object.keys(map)
+    .sort((a, b) => src.points[b][series.labels.length - 1] - src.points[a][series.labels.length - 1])
+    .map((key) => ({
+      label: key,
+      data: map[key],
+      borderColor: src.style[key].color,
+      backgroundColor: src.style[key].color,
+      borderDash: src.style[key].dash,
+      borderWidth: 2,
+      pointRadius: 2,
+      pointHoverRadius: 4,
+      tension: 0.15,
+      hidden: hidden.has(key),
+    }));
+}
+
+function renderSeasonProgress() {
+  const section = document.getElementById("section-progress");
+  if (!section) return;
+  const empty = document.getElementById("progressEmpty");
+  const content = document.getElementById("progressContent");
+  const series = progressBuildSeries();
+  if (!series) {
+    if (empty) empty.style.display = "block";
+    if (content) content.style.display = "none";
+    return;
+  }
+  if (empty) empty.style.display = "none";
+  if (content) content.style.display = "block";
+
+  section.querySelectorAll(".progress-scope").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.scope === progressScope);
+    btn.onclick = () => {
+      progressScope = btn.dataset.scope;
+      renderSeasonProgress();
+    };
+  });
+
+  const scope = progressScope;
+  const src = series[scope];
+  const keys = Object.keys(src.points).sort(
+    (a, b) => src.points[b][series.labels.length - 1] - src.points[a][series.labels.length - 1],
+  );
+
+  const toggles = document.getElementById("progressToggles");
+  if (toggles) {
+    toggles.innerHTML = keys
+      .map((k) => {
+        const st = src.style[k];
+        const off = progressHidden[scope].has(k) ? " is-off" : "";
+        return `<button type="button" class="progress-chip${off}" data-key="${escapeHtml(k)}" style="--chip-color:${st.color}"><span class="progress-swatch" style="${st.dash.length ? "background:repeating-linear-gradient(90deg," + st.color + " 0 4px,transparent 4px 8px)" : "background:" + st.color}"></span>${escapeHtml(k)}</button>`;
+      })
+      .join("");
+    toggles.querySelectorAll(".progress-chip").forEach((chip) => {
+      chip.onclick = () => {
+        const key = chip.getAttribute("data-key");
+        const target = keys.find((k) => escapeHtml(k) === key) || key;
+        if (progressHidden[scope].has(target)) progressHidden[scope].delete(target);
+        else progressHidden[scope].add(target);
+        renderSeasonProgress();
+      };
+    });
+  }
+
+  const baseOpts = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "nearest", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: {} },
+    },
+    scales: {
+      x: {
+        title: { display: true, text: "Round" },
+        ticks: { color: "#bbb", maxRotation: 60, minRotation: 0 },
+        grid: { color: "rgba(255,255,255,0.06)" },
+      },
+    },
+  };
+
+  const mk = (canvasId, kind) => {
+    const el = document.getElementById(canvasId);
+    if (!el) return;
+    if (charts[canvasId]) charts[canvasId].destroy();
+    const yScale =
+      kind === "points"
+        ? {
+            title: { display: true, text: "Points" },
+            beginAtZero: true,
+            ticks: { color: "#bbb" },
+            grid: { color: "rgba(255,255,255,0.06)" },
+          }
+        : {
+            title: { display: true, text: "Position" },
+            reverse: true,
+            min: 1,
+            ticks: { color: "#bbb", stepSize: 1, precision: 0 },
+            grid: { color: "rgba(255,255,255,0.06)" },
+          };
+    charts[canvasId] = new Chart(el.getContext("2d"), {
+      type: "line",
+      data: { labels: series.labels, datasets: progressDatasets(scope, series, kind) },
+      options: { ...baseOpts, scales: { ...baseOpts.scales, y: yScale } },
+    });
+  };
+
+  mk("progressPointsChart", "points");
+  mk("progressPositionChart", "position");
 }
