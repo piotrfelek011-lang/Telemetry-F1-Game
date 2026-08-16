@@ -1,6 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CAREER_SLOTS, getActiveCareer, setActiveCareer, type CareerSlot } from "@/lib/career";
+import {
+  CAREER_SLOTS,
+  getActiveCareer,
+  setActiveCareer,
+  getCareerNames,
+  setCareerNames,
+  type CareerSlot,
+} from "@/lib/career";
 import { fetchCareerCounts, clearSessionsCache } from "@/lib/f1-shell";
 import { ShellPage } from "@/components/f1/ShellHeader";
 import { supabase, displayNameFromSession } from "@/lib/supabase";
@@ -24,12 +31,48 @@ function CareersPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [active, setActive] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
 
   useEffect(() => {
     setActive(getActiveCareer());
+    setNames(getCareerNames());
     fetchCareerCounts().then(setCounts).catch(() => {});
     supabase.auth.getSession().then(({ data }) => setName(displayNameFromSession(data.session)));
+    supabase
+      .from("career_slot_names")
+      .select("slot_id,name")
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        data.forEach((r: any) => {
+          if (r?.slot_id && r?.name) map[r.slot_id] = r.name;
+        });
+        setNames(map);
+        setCareerNames(map);
+      });
   }, []);
+
+  async function saveName(slot: CareerSlot, value: string) {
+    const clean = value.trim().slice(0, 40);
+    const next = { ...names };
+    if (clean) next[slot.id] = clean;
+    else delete next[slot.id];
+    setNames(next);
+    setCareerNames(next);
+    setEditing(null);
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess.session?.user?.id;
+    if (!uid) return;
+    if (clean) {
+      await supabase
+        .from("career_slot_names")
+        .upsert({ user_id: uid, slot_id: slot.id, name: clean }, { onConflict: "user_id,slot_id" });
+    } else {
+      await supabase.from("career_slot_names").delete().eq("user_id", uid).eq("slot_id", slot.id);
+    }
+  }
 
   function choose(slot: CareerSlot) {
     setActiveCareer(slot.id);
@@ -62,6 +105,40 @@ function CareersPage() {
                 {CAREER_SLOTS.filter((s) => s.type === g.type).map((s) => {
                   const n = counts[s.id] ?? 0;
                   const isActive = active === s.id;
+                  if (editing === s.id) {
+                    return (
+                      <form
+                        key={s.id}
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          saveName(s, draft);
+                        }}
+                        className="flex items-center gap-2 rounded-lg border border-red-500/60 bg-white/[0.04] p-4"
+                      >
+                        <input
+                          autoFocus
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          placeholder={`${g.type === "driver" ? "Driver" : "My Team"} ${s.index}`}
+                          maxLength={40}
+                          className="min-w-0 flex-1 rounded border border-white/15 bg-black/40 px-2 py-1.5 text-sm text-white outline-none focus:border-red-500"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded bg-red-500 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditing(null)}
+                          className="rounded border border-white/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white/60"
+                        >
+                          Cancel
+                        </button>
+                      </form>
+                    );
+                  }
                   return (
                     <button
                       key={s.id}
@@ -76,19 +153,40 @@ function CareersPage() {
                       <span className="text-xs font-black uppercase tracking-widest text-white/50">
                         Slot {s.index}
                       </span>
-                      <span className="flex flex-col">
-                        <span className="text-lg font-bold">
-                          {g.type === "driver" ? "Driver" : "My Team"} {s.index}
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate text-lg font-bold">
+                          {names[s.id] || `${g.type === "driver" ? "Driver" : "My Team"} ${s.index}`}
                         </span>
                         <span className="text-xs text-white/55">
                           {n > 0 ? `${n} session${n === 1 ? "" : "s"}` : "Empty — upload to start"}
                         </span>
                       </span>
-                      {isActive && (
-                        <span className="ml-auto rounded-sm bg-red-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-                          Active
+                      <span className="ml-auto flex items-center gap-2">
+                        {isActive && (
+                          <span className="rounded-sm bg-red-500 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                            Active
+                          </span>
+                        )}
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDraft(names[s.id] ?? "");
+                            setEditing(s.id);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              setDraft(names[s.id] ?? "");
+                              setEditing(s.id);
+                            }
+                          }}
+                          className="rounded border border-white/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60 hover:border-red-500/60 hover:text-white"
+                        >
+                          Rename
                         </span>
-                      )}
+                      </span>
                     </button>
                   );
                 })}

@@ -2809,3 +2809,10 @@ body.embed-upload .download-btn.small:hover {
   background: rgba(239, 68, 68, 0.25);
   color: #fff;
 }
+
+.progress-chip-bulk {
+  --chip-color: #ff2d2d;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

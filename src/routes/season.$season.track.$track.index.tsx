@@ -145,6 +145,25 @@ function TrackPage() {
     [sameTrackSeasons, seasonN],
   );
 
+  // Rounds of this season, ordered by when each weekend was run.
+  const seasonRounds = useMemo(() => {
+    const first = new Map<string, { slug: string; name: string; t: number }>();
+    sessions
+      .filter((x) => Number(x.season) === seasonN)
+      .forEach((x) => {
+        const slug = trackSlug(x.track_name);
+        if (!slug) return;
+        const t = new Date(x.created_at || 0).getTime() || 0;
+        const cur = first.get(slug);
+        if (!cur || t < cur.t) first.set(slug, { slug, name: x.track_name, t });
+      });
+    return Array.from(first.values()).sort((a, b) => a.t - b.t);
+  }, [sessions, seasonN]);
+  const roundIdx = seasonRounds.findIndex((r) => r.slug === trackSlug(track));
+  const prevRound = roundIdx > 0 ? seasonRounds[roundIdx - 1] : undefined;
+  const nextRound =
+    roundIdx >= 0 && roundIdx < seasonRounds.length - 1 ? seasonRounds[roundIdx + 1] : undefined;
+
   const displayName = titleCaseTrack(canonicalName);
   const cats = Array.from(new Set(trackSessions.map((s) => s.category).filter(Boolean)));
   const race = trackSessions.find((s) => s.category === "Race");
@@ -420,6 +439,34 @@ function TrackPage() {
                     className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
                   >
                     Season {nextSeason} →
+                  </Link>
+                )}
+              </div>
+            )}
+
+            {(prevRound || nextRound) && (
+              <div className="mb-3 flex flex-wrap items-center gap-2" suppressHydrationWarning>
+                <span className="text-[11px] uppercase tracking-widest text-white/40">
+                  Round {roundIdx + 1} / {seasonRounds.length}
+                </span>
+                {prevRound && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(seasonN), track: prevRound.slug }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    ← {titleCaseTrack(prevRound.name)}
+                  </Link>
+                )}
+                {nextRound && (
+                  <Link
+                    to="/season/$season/track/$track"
+                    params={{ season: String(seasonN), track: nextRound.slug }}
+                    search={{ cat }}
+                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
+                  >
+                    {titleCaseTrack(nextRound.name)} →
                   </Link>
                 )}
               </div>
