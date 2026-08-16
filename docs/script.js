@@ -6104,6 +6104,7 @@ function renderStartingGrid() {
 // ---------------------------------------------------------------
 let progressScope = "drivers";
 const progressHidden = { drivers: new Set(), teams: new Set() };
+const progressBulkTouched = { drivers: false, teams: false };
 
 function progressBuildSeries() {
   const scoring = allSessions
@@ -6267,21 +6268,32 @@ function renderSeasonProgress() {
   );
 
   // Default: all lines hidden until you explicitly choose who to display.
-  if (progressHidden[scope].size === 0 && keys.length > 0) {
+  if (!progressBulkTouched[scope] && progressHidden[scope].size === 0 && keys.length > 0) {
     keys.forEach((k) => progressHidden[scope].add(k));
   }
 
 
   const toggles = document.getElementById("progressToggles");
   if (toggles) {
-    toggles.innerHTML = keys
+    const bulk =
+      `<button type="button" class="progress-chip progress-chip-bulk" data-bulk="show">Show all</button>` +
+      `<button type="button" class="progress-chip progress-chip-bulk" data-bulk="hide">Hide all</button>`;
+    toggles.innerHTML = bulk + keys
       .map((k) => {
         const st = src.style[k];
         const off = progressHidden[scope].has(k) ? " is-off" : "";
         return `<button type="button" class="progress-chip${off}" data-key="${escapeHtml(k)}" style="--chip-color:${st.color}"><span class="progress-swatch" style="${st.dash.length ? "background:repeating-linear-gradient(90deg," + st.color + " 0 4px,transparent 4px 8px)" : "background:" + st.color}"></span>${escapeHtml(k)}</button>`;
       })
       .join("");
-    toggles.querySelectorAll(".progress-chip").forEach((chip) => {
+    toggles.querySelectorAll(".progress-chip-bulk").forEach((btn) => {
+      btn.onclick = () => {
+        if (btn.dataset.bulk === "show") progressHidden[scope].clear();
+        else keys.forEach((k) => progressHidden[scope].add(k));
+        progressBulkTouched[scope] = true;
+        renderSeasonProgress();
+      };
+    });
+    toggles.querySelectorAll(".progress-chip[data-key]").forEach((chip) => {
       chip.onclick = () => {
         const key = chip.getAttribute("data-key");
         const target = keys.find((k) => escapeHtml(k) === key) || key;
