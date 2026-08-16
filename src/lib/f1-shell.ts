@@ -241,7 +241,11 @@ export function badgesFor(s: Session): SessionBadges {
     win: !dnf && classifiedFinish === 1,
     pole: classifiedStart === 1,
     podium: !dnf && classifiedFinish >= 1 && classifiedFinish <= 3,
-    fl: !!(s.race_story?.player_fastest_lap ?? false),
+    fl: !!(
+      s.race_story?.player_fastest_lap ??
+      (s.race_story?.fastest_lap &&
+        String(s.race_story.fastest_lap.name || "").toUpperCase() === playerName)
+    ),
     gs: !dnf && !!(s.race_story?.grand_slam ?? false),
     dnf,
   };
@@ -271,8 +275,8 @@ export function seasonStats(sessions: Session[]) {
     sprintWins: sprints.filter((s) => badgesFor(s).win).length,
     gpPoles: races.filter((s) => badgesFor(s).pole).length,
     sprintPoles: sprints.filter((s) => badgesFor(s).pole).length,
-    podiums: races.filter((s) => badgesFor(s).podium).length,
     fastestLaps: sessions.filter((s) => badgesFor(s).fl).length,
+    dnfs: sessions.filter((s) => badgesFor(s).dnf).length,
   };
 }
 
