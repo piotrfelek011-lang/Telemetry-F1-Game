@@ -154,8 +154,8 @@ function StatsBar({ stats }: { stats: ReturnType<typeof seasonStats> }) {
     { label: "Sprint Wins", value: stats.sprintWins, icon: "🏁" },
     { label: "GP Poles", value: stats.gpPoles, icon: "⏱️" },
     { label: "Sprint Poles", value: stats.sprintPoles, icon: "⚡" },
-    { label: "Podiums", value: stats.podiums, icon: "🥂" },
     { label: "Fastest Laps", value: stats.fastestLaps, icon: "💜" },
+    { label: "DNFs", value: stats.dnfs, icon: "💥" },
   ];
   return (
     <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
