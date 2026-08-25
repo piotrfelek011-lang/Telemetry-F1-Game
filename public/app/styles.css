@@ -2816,3 +2816,35 @@ body.embed-upload .download-btn.small:hover {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* ---- Tyre strategies (Race Story) ---- */
+.stint-strip-row { display: flex; width: 100%; }
+.strategy-actions { margin-top: 10px; }
+.strategy-add-btn {
+  background: rgba(239, 51, 64, 0.12);
+  border: 1px solid rgba(239, 51, 64, 0.5);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.strategy-add-btn:hover { background: rgba(239, 51, 64, 0.28); box-shadow: 0 0 12px rgba(239,51,64,0.3); }
+.strategy-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.strategy-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px; padding: 6px 8px;
+}
+.strategy-segs { display: flex; gap: 4px; flex-wrap: wrap; }
+.strategy-seg { font-size: 11px; font-weight: 800; border-radius: 4px; padding: 2px 6px; }
+.strategy-name { font-size: 12px; color: rgba(255,255,255,0.75); font-weight: 600; margin-left: auto; }
+.strategy-mini {
+  background: transparent; border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7); border-radius: 5px; cursor: pointer;
+  font-size: 12px; padding: 2px 7px;
+}
+.strategy-mini:hover { border-color: rgba(239,51,64,0.6); color: #fff; }
