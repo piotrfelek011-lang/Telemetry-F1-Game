@@ -59,12 +59,19 @@ const OPTIONS: Opt[] = [
   { view: "data", label: "Laps", icon: "📋", desc: "Per-lap table and stint summary" },
   { view: "practice", label: "Practice", icon: "🏁", desc: "Free practice fuel calculator" },
   {
+    view: "strategies",
+    label: "Possible Strategies",
+    icon: "🛞",
+    desc: "Saved tyre strategies for this track",
+  },
+  {
     view: "teammate",
     label: "Teammate H2H",
     icon: "🤝",
     desc: "Every team's driver comparison this season",
   },
 ];
+
 
 function matchesCat(s: Session, bucket: string | undefined) {
   const c = s.category || "Race";
@@ -417,60 +424,65 @@ function TrackPage() {
               </h1>
             </div>
             {(prevSeason || nextSeason) && (
-              <div className="mb-3 flex flex-wrap items-center gap-2" suppressHydrationWarning>
-                <span className="text-[11px] uppercase tracking-widest text-white/40">
-                  Same track
-                </span>
-                {prevSeason && (
-                  <Link
-                    to="/season/$season/track/$track"
-                    params={{ season: String(prevSeason), track: trackSlug(track) }}
-                    search={{ cat }}
-                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
-                  >
-                    ← Season {prevSeason}
-                  </Link>
-                )}
-                {nextSeason && (
-                  <Link
-                    to="/season/$season/track/$track"
-                    params={{ season: String(nextSeason), track: trackSlug(track) }}
-                    search={{ cat }}
-                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
-                  >
-                    Season {nextSeason} →
-                  </Link>
-                )}
+              <div className="mb-2 flex" suppressHydrationWarning>
+                <NavBar
+                  center={`Same track`}
+                  prev={
+                    prevSeason ? (
+                      <NavLink
+                        dir="prev"
+                        to="/season/$season/track/$track"
+                        params={{ season: String(prevSeason), track: trackSlug(track) }}
+                        search={{ cat }}
+                        label={`Season ${prevSeason}`}
+                      />
+                    ) : null
+                  }
+                  next={
+                    nextSeason ? (
+                      <NavLink
+                        dir="next"
+                        to="/season/$season/track/$track"
+                        params={{ season: String(nextSeason), track: trackSlug(track) }}
+                        search={{ cat }}
+                        label={`Season ${nextSeason}`}
+                      />
+                    ) : null
+                  }
+                />
               </div>
             )}
 
             {(prevRound || nextRound) && (
-              <div className="mb-3 flex flex-wrap items-center gap-2" suppressHydrationWarning>
-                <span className="text-[11px] uppercase tracking-widest text-white/40">
-                  Round {roundIdx + 1} / {seasonRounds.length}
-                </span>
-                {prevRound && (
-                  <Link
-                    to="/season/$season/track/$track"
-                    params={{ season: String(seasonN), track: prevRound.slug }}
-                    search={{ cat }}
-                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
-                  >
-                    ← {titleCaseTrack(prevRound.name)}
-                  </Link>
-                )}
-                {nextRound && (
-                  <Link
-                    to="/season/$season/track/$track"
-                    params={{ season: String(seasonN), track: nextRound.slug }}
-                    search={{ cat }}
-                    className="rounded-md border border-white/15 bg-white/[0.04] px-3 py-1.5 text-xs font-bold text-white hover:border-red-500/60"
-                  >
-                    {titleCaseTrack(nextRound.name)} →
-                  </Link>
-                )}
+              <div className="mb-3 flex" suppressHydrationWarning>
+                <NavBar
+                  center={`Round ${roundIdx + 1} / ${seasonRounds.length}`}
+                  prev={
+                    prevRound ? (
+                      <NavLink
+                        dir="prev"
+                        to="/season/$season/track/$track"
+                        params={{ season: String(seasonN), track: prevRound.slug }}
+                        search={{ cat }}
+                        label={titleCaseTrack(prevRound.name)}
+                      />
+                    ) : null
+                  }
+                  next={
+                    nextRound ? (
+                      <NavLink
+                        dir="next"
+                        to="/season/$season/track/$track"
+                        params={{ season: String(seasonN), track: nextRound.slug }}
+                        search={{ cat }}
+                        label={titleCaseTrack(nextRound.name)}
+                      />
+                    ) : null
+                  }
+                />
               </div>
             )}
+
 
             <div className="mb-3 flex flex-wrap gap-2" suppressHydrationWarning>
               {cats.map((c) => (
@@ -551,18 +563,25 @@ function TrackPage() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {orderedOptions.map((o) => {
-            const isTeammate = o.view === "teammate";
-            const linkProps = isTeammate
-              ? {
-                  to: "/season/$season/teammate" as const,
-                  params: { season },
-                  search: undefined as any,
-                }
-              : {
-                  to: "/season/$season/track/$track/$view" as const,
-                  params: { season, track, view: o.view },
-                  search: { cat },
-                };
+            const linkProps =
+              o.view === "teammate"
+                ? {
+                    to: "/season/$season/teammate" as const,
+                    params: { season },
+                    search: undefined as any,
+                  }
+                : o.view === "strategies"
+                  ? {
+                      to: "/season/$season/track/$track/strategies" as const,
+                      params: { season, track },
+                      search: { cat },
+                    }
+                  : {
+                      to: "/season/$season/track/$track/$view" as const,
+                      params: { season, track, view: o.view },
+                      search: { cat },
+                    };
+
             return (
               <div
                 key={o.view}
@@ -606,5 +625,55 @@ function Tag({ color, children }: { color: string; children: React.ReactNode }) 
     >
       {children}
     </span>
+  );
+}
+
+function NavBar({
+  center,
+  prev,
+  next,
+}: {
+  center: string;
+  prev: React.ReactNode;
+  next: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-stretch gap-1 overflow-hidden rounded-lg border border-white/10 bg-black/40 p-1 shadow-inner">
+      <span className="w-[3px] rounded-full bg-red-500/80" />
+      {prev ?? <NavPlaceholder />}
+      <span className="flex items-center whitespace-nowrap rounded-md bg-white/[0.06] px-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
+        {center}
+      </span>
+      {next ?? <NavPlaceholder />}
+    </div>
+  );
+}
+
+function NavPlaceholder() {
+  return <span className="min-w-[88px] rounded-md bg-white/[0.02]" />;
+}
+
+function NavLink({
+  dir,
+  label,
+  ...rest
+}: {
+  dir: "prev" | "next";
+  label: string;
+  to: any;
+  params: any;
+  search: any;
+}) {
+  return (
+    <Link
+      {...(rest as any)}
+      className="group flex min-w-[88px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white/80 transition hover:bg-red-500/15 hover:text-white hover:shadow-[0_0_12px_rgba(239,51,64,0.25)]"
+    >
+      {dir === "prev" && (
+        <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+      )}
+      <span className="truncate">{label}</span>
+      {dir === "next" && <span className="transition-transform group-hover:translate-x-0.5">→</span>}
+    </Link>
   );
 }
