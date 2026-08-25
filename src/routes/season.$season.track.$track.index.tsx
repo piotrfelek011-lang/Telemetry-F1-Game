@@ -558,18 +558,25 @@ function TrackPage() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {orderedOptions.map((o) => {
-            const isTeammate = o.view === "teammate";
-            const linkProps = isTeammate
-              ? {
-                  to: "/season/$season/teammate" as const,
-                  params: { season },
-                  search: undefined as any,
-                }
-              : {
-                  to: "/season/$season/track/$track/$view" as const,
-                  params: { season, track, view: o.view },
-                  search: { cat },
-                };
+            const linkProps =
+              o.view === "teammate"
+                ? {
+                    to: "/season/$season/teammate" as const,
+                    params: { season },
+                    search: undefined as any,
+                  }
+                : o.view === "strategies"
+                  ? {
+                      to: "/season/$season/track/$track/strategies" as const,
+                      params: { season, track },
+                      search: { cat },
+                    }
+                  : {
+                      to: "/season/$season/track/$track/$view" as const,
+                      params: { season, track, view: o.view },
+                      search: { cat },
+                    };
+
             return (
               <div
                 key={o.view}
