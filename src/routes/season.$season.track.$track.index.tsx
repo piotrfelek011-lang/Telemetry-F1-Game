@@ -627,3 +627,53 @@ function Tag({ color, children }: { color: string; children: React.ReactNode }) 
     </span>
   );
 }
+
+function NavBar({
+  center,
+  prev,
+  next,
+}: {
+  center: string;
+  prev: React.ReactNode;
+  next: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-stretch gap-1 overflow-hidden rounded-lg border border-white/10 bg-black/40 p-1 shadow-inner">
+      <span className="w-[3px] rounded-full bg-red-500/80" />
+      {prev ?? <NavPlaceholder />}
+      <span className="flex items-center whitespace-nowrap rounded-md bg-white/[0.06] px-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
+        {center}
+      </span>
+      {next ?? <NavPlaceholder />}
+    </div>
+  );
+}
+
+function NavPlaceholder() {
+  return <span className="min-w-[88px] rounded-md bg-white/[0.02]" />;
+}
+
+function NavLink({
+  dir,
+  label,
+  ...rest
+}: {
+  dir: "prev" | "next";
+  label: string;
+  to: any;
+  params: any;
+  search: any;
+}) {
+  return (
+    <Link
+      {...(rest as any)}
+      className="group flex min-w-[88px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white/80 transition hover:bg-red-500/15 hover:text-white hover:shadow-[0_0_12px_rgba(239,51,64,0.25)]"
+    >
+      {dir === "prev" && (
+        <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+      )}
+      <span className="truncate">{label}</span>
+      {dir === "next" && <span className="transition-transform group-hover:translate-x-0.5">→</span>}
+    </Link>
+  );
+}
