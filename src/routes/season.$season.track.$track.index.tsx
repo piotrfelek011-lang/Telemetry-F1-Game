@@ -59,12 +59,19 @@ const OPTIONS: Opt[] = [
   { view: "data", label: "Laps", icon: "📋", desc: "Per-lap table and stint summary" },
   { view: "practice", label: "Practice", icon: "🏁", desc: "Free practice fuel calculator" },
   {
+    view: "strategies",
+    label: "Possible Strategies",
+    icon: "🛞",
+    desc: "Saved tyre strategies for this track",
+  },
+  {
     view: "teammate",
     label: "Teammate H2H",
     icon: "🤝",
     desc: "Every team's driver comparison this season",
   },
 ];
+
 
 function matchesCat(s: Session, bucket: string | undefined) {
   const c = s.category || "Race";
