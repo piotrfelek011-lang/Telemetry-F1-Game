@@ -84,17 +84,16 @@ export function formatStrategy(stints: StrategyStint[]) {
 }
 
 export async function listStrategies(trackKey: string): Promise<Strategy[]> {
-  const career = getActiveCareer();
-  let q = supabase
+  // Universal per track: shared across every season and career slot.
+  const { data, error } = await supabase
     .from("tyre_strategies")
     .select("*")
     .eq("track_key", trackKey)
     .order("created_at", { ascending: true });
-  if (career) q = q.eq("career_slot", career);
-  const { data, error } = await q;
   if (error) throw error;
   return (data ?? []).map(normalize);
 }
+
 
 function normalize(row: any): Strategy {
   return {
