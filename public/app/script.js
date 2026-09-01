@@ -5395,14 +5395,11 @@ function currentStintsAsStrategy() {
 async function loadTrackStrategies() {
   const db = getSupabaseClient({ silent: true });
   if (!db || !currentData) return [];
-  const slot = getCareerSlot();
-  let q = db
+  const { data, error } = await db
     .from("tyre_strategies")
     .select("*")
     .eq("track_key", strategyTrackKey(currentData.track_name))
     .order("created_at", { ascending: true });
-  if (slot) q = q.eq("career_slot", slot);
-  const { data, error } = await q;
   if (error) {
     console.warn("Could not load tyre strategies", error.message);
     return [];
@@ -5427,9 +5424,9 @@ async function saveCurrentStintsAsStrategy() {
   if (!uid) return alert("Sign in to save strategies.");
   const { error } = await db.from("tyre_strategies").insert({
     user_id: uid,
-    career_slot: getCareerSlot(),
+    career_slot: null,
     track_key: strategyTrackKey(currentData.track_name),
-    season: Number(currentData.season) || null,
+    season: null,
     name: (name || "").trim() || suggested,
     notes: "",
     source: "race",
