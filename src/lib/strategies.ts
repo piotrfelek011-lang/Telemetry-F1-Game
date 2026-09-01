@@ -115,11 +115,11 @@ export async function createStrategy(input: {
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData?.user?.id;
   if (!uid) throw new Error("Sign in to save strategies");
-  const payload = {
     user_id: uid,
-    career_slot: getActiveCareer(),
+    career_slot: null,
     track_key: input.track_key,
-    season: input.season ?? null,
+    season: null,
+
     name: input.name,
     notes: input.notes ?? "",
     source: input.source ?? "custom",
