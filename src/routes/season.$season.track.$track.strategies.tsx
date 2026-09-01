@@ -13,6 +13,7 @@ import {
   relayStints,
   stintLaps,
   totalLaps,
+  trackLapLimit,
   updateStrategy,
   type Strategy,
   type StrategyStint,
@@ -69,11 +70,17 @@ function StrategiesPage() {
   useEffect(reload, [reload]);
 
   const draftTotal = useMemo(() => (draft ? totalLaps(draft.stints) : 0), [draft]);
+  const lapLimit = useMemo(() => trackLapLimit(trackKey), [trackKey]);
+  const overLimit = lapLimit != null && draftTotal > lapLimit;
 
   async function save() {
     if (!draft) return;
     setSaving(true);
     try {
+      if (lapLimit != null && totalLaps(draft.stints) > lapLimit) {
+        setErr(`This strategy is longer than the race: ${totalLaps(draft.stints)} laps vs ${lapLimit} at ${display}.`);
+        return;
+      }
       const stints = relayStints(draft.stints);
       const name = draft.name.trim() || autoName(stints);
       if (draft.id) {
@@ -116,7 +123,8 @@ function StrategiesPage() {
           <div>
             <h1 className="text-2xl font-black">Possible Strategies</h1>
             <p className="text-sm text-white/50">
-              Saved for {display} — shared across every season and session of this track.
+              Saved for {display} — shared across every season, career slot and session of this
+              track{lapLimit != null ? ` · race distance ${lapLimit} laps` : ""}.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -152,8 +160,11 @@ function StrategiesPage() {
                 placeholder={autoName(draft.stints)}
                 className="min-w-[200px] flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold outline-none focus:border-red-500/60"
               />
-              <span className="text-xs uppercase tracking-widest text-white/50">
-                {draftTotal} laps total
+              <span
+                className={`text-xs uppercase tracking-widest ${overLimit ? "text-red-400" : "text-white/50"}`}
+              >
+                {lapLimit != null ? `${draftTotal} / ${lapLimit} laps` : `${draftTotal} laps total`}
+                {overLimit ? " — over race distance" : ""}
               </span>
             </div>
 
@@ -233,7 +244,7 @@ function StrategiesPage() {
             <div className="mt-3 flex items-center gap-2">
               <button
                 onClick={save}
-                disabled={saving}
+                disabled={saving || overLimit}
                 className="rounded-md bg-red-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-400 disabled:opacity-50"
               >
                 {saving ? "Saving…" : draft.id ? "Save changes" : "Create strategy"}
