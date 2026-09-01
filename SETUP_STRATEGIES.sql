@@ -32,3 +32,7 @@ CREATE POLICY "own tyre strategies"
 
 CREATE INDEX IF NOT EXISTS tyre_strategies_user_track_idx
   ON public.tyre_strategies (user_id, track_key);
+
+-- Strategies are universal per track (shared across every season and career slot).
+UPDATE public.tyre_strategies SET career_slot = NULL, season = NULL
+WHERE career_slot IS NOT NULL OR season IS NOT NULL;
