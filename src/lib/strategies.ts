@@ -2,7 +2,21 @@
 // that track) and scoped to the signed-in user + active career slot.
 
 import { supabase } from "./supabase";
-import { getActiveCareer } from "./career";
+
+// Race distance (laps) per track, as run in this career (50% distance).
+export const TRACK_LAPS: Record<string, number> = {
+  melbourne: 29, shanghai: 28, suzuka: 27, sakhir: 29, jeddah: 25,
+  miami: 29, imola: 32, monaco: 39, catalunya: 33, montreal: 35,
+  austria: 36, austria_reverse: 36, silverstone: 26, spa: 22, hungaroring: 35,
+  zandvoort: 36, monza: 27, madrid: 29, baku: 26, singapore: 31,
+  texas: 28, mexico: 36, brazil: 36, vegas: 25, losail: 29,
+  abu_dhabi: 29,
+};
+
+export function trackLapLimit(trackKey: string): number | null {
+  return TRACK_LAPS[trackKey] ?? null;
+}
+
 
 export type Compound = "Soft" | "Medium" | "Hard" | "Intermediate" | "Wet";
 
