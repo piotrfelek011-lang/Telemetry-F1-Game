@@ -2821,13 +2821,19 @@ body.embed-upload .download-btn.small:hover {
 .stint-strip-row { display: flex; width: 100%; }
 .strategy-actions { margin-top: 10px; }
 .strategy-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
   background: rgba(239, 51, 64, 0.12);
   border: 1px solid rgba(239, 51, 64, 0.5);
   color: #fff;
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 12px;
   font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
   transition: 0.15s;
 }
