@@ -423,63 +423,62 @@ function TrackPage() {
                 {cat && <span className="ml-3 text-lg font-bold text-white/60">{cat}</span>}
               </h1>
             </div>
-            {(prevSeason || nextSeason) && (
-              <div className="mb-2 flex" suppressHydrationWarning>
-                <NavBar
-                  center={`Same track`}
-                  prev={
-                    prevSeason ? (
-                      <NavLink
-                        dir="prev"
-                        to="/season/$season/track/$track"
-                        params={{ season: String(prevSeason), track: trackSlug(track) }}
-                        search={{ cat }}
-                        label={`Season ${prevSeason}`}
-                      />
-                    ) : null
-                  }
-                  next={
-                    nextSeason ? (
-                      <NavLink
-                        dir="next"
-                        to="/season/$season/track/$track"
-                        params={{ season: String(nextSeason), track: trackSlug(track) }}
-                        search={{ cat }}
-                        label={`Season ${nextSeason}`}
-                      />
-                    ) : null
-                  }
-                />
-              </div>
-            )}
-
-            {(prevRound || nextRound) && (
-              <div className="mb-3 flex" suppressHydrationWarning>
-                <NavBar
-                  center={`Round ${roundIdx + 1} / ${seasonRounds.length}`}
-                  prev={
-                    prevRound ? (
-                      <NavLink
-                        dir="prev"
-                        to="/season/$season/track/$track"
-                        params={{ season: String(seasonN), track: prevRound.slug }}
-                        search={{ cat }}
-                        label={titleCaseTrack(prevRound.name)}
-                      />
-                    ) : null
-                  }
-                  next={
-                    nextRound ? (
-                      <NavLink
-                        dir="next"
-                        to="/season/$season/track/$track"
-                        params={{ season: String(seasonN), track: nextRound.slug }}
-                        search={{ cat }}
-                        label={titleCaseTrack(nextRound.name)}
-                      />
-                    ) : null
-                  }
-                />
+            {(prevSeason || nextSeason || prevRound || nextRound) && (
+              <div className="mb-3 flex flex-wrap items-stretch gap-2" suppressHydrationWarning>
+                {(prevSeason || nextSeason) && (
+                  <NavBar
+                    center={`Same track`}
+                    prev={
+                      prevSeason ? (
+                        <NavLink
+                          dir="prev"
+                          to="/season/$season/track/$track"
+                          params={{ season: String(prevSeason), track: trackSlug(track) }}
+                          search={{ cat }}
+                          label={`Season ${prevSeason}`}
+                        />
+                      ) : null
+                    }
+                    next={
+                      nextSeason ? (
+                        <NavLink
+                          dir="next"
+                          to="/season/$season/track/$track"
+                          params={{ season: String(nextSeason), track: trackSlug(track) }}
+                          search={{ cat }}
+                          label={`Season ${nextSeason}`}
+                        />
+                      ) : null
+                    }
+                  />
+                )}
+                {(prevRound || nextRound) && (
+                  <NavBar
+                    center={`Round ${roundIdx + 1} / ${seasonRounds.length}`}
+                    prev={
+                      prevRound ? (
+                        <NavLink
+                          dir="prev"
+                          to="/season/$season/track/$track"
+                          params={{ season: String(seasonN), track: prevRound.slug }}
+                          search={{ cat }}
+                          label={titleCaseTrack(prevRound.name)}
+                        />
+                      ) : null
+                    }
+                    next={
+                      nextRound ? (
+                        <NavLink
+                          dir="next"
+                          to="/season/$season/track/$track"
+                          params={{ season: String(seasonN), track: nextRound.slug }}
+                          search={{ cat }}
+                          label={titleCaseTrack(nextRound.name)}
+                        />
+                      ) : null
+                    }
+                  />
+                )}
               </div>
             )}
 
