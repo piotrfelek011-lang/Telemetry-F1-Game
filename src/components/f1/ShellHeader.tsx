@@ -59,7 +59,7 @@ function CareerChip() {
     <Link
       to="/careers"
       title="Switch career slot"
-      className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-200 hover:bg-red-500/20"
+      className="max-w-[120px] truncate rounded-md border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-bold text-red-200 hover:bg-red-500/20 sm:max-w-none sm:px-3 sm:text-xs"
     >
       {label || "Career"}
     </Link>
@@ -85,7 +85,7 @@ function UserMenu() {
       <span className="hidden text-xs font-semibold uppercase tracking-widest text-white/60 sm:inline">{name}</span>
       <button
         onClick={signOut}
-        className="rounded-md border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/10"
+        className="rounded-md border border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] font-semibold text-white hover:bg-white/10 sm:px-3 sm:text-xs"
       >
         Sign out
       </button>
@@ -96,7 +96,7 @@ function UserMenu() {
 export function ShellPage({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white">
-      <div className="mx-auto max-w-[1400px] px-4 py-6">{children}</div>
+      <div className="mx-auto max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">{children}</div>
     </div>
   );
 }
