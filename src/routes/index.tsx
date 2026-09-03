@@ -113,7 +113,7 @@ function MainPage() {
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trackGroups.map((g) => (
             <TrackCard
               key={`${trackSlug(g.track)}::${g.category}`}
@@ -162,7 +162,7 @@ function StatsBar({ stats }: { stats: ReturnType<typeof seasonStats> }) {
       {items.map((it) => (
         <div key={it.label} className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-3">
           <div className="text-[10px] uppercase tracking-widest text-white/50">{it.label}</div>
-          <div className="mt-1 text-xl font-black">{it.icon} {it.value}</div>
+          <div className="mt-1 text-lg font-black sm:text-xl">{it.icon} {it.value}</div>
         </div>
       ))}
     </div>
