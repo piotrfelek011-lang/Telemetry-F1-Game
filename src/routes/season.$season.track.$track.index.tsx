@@ -417,10 +417,10 @@ function TrackPage() {
         <section className="mb-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <div className="mb-2 flex items-center gap-3">
-              <span className="text-4xl">{trackFlag(canonicalName)}</span>
-              <h1 className="text-3xl font-black">
+              <span className="text-3xl sm:text-4xl">{trackFlag(canonicalName)}</span>
+              <h1 className="min-w-0 text-2xl font-black sm:text-3xl">
                 {displayName}
-                {cat && <span className="ml-3 text-lg font-bold text-white/60">{cat}</span>}
+                {cat && <span className="ml-2 text-base font-bold text-white/60 sm:ml-3 sm:text-lg">{cat}</span>}
               </h1>
             </div>
             {(prevSeason || nextSeason || prevRound || nextRound) && (
@@ -501,7 +501,7 @@ function TrackPage() {
               {badgeAgg.fl && <Tag color="#a855f7">Fastest Lap</Tag>}
             </div>
             <p className="mb-4 text-sm text-white/70">{infoSummary}</p>
-            <div className="mb-1 flex items-center justify-between gap-3">
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-3">
                 <label className="block text-xs uppercase tracking-widest text-white/50">Notes</label>
                 <span
@@ -532,7 +532,7 @@ function TrackPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={notesTemplate}
-              className="min-h-[340px] w-full resize-y whitespace-pre-wrap rounded-md border border-white/10 bg-white/[0.03] p-3 font-mono text-sm leading-relaxed text-white outline-none focus:border-red-500/60"
+              className="min-h-[200px] w-full resize-y sm:min-h-[340px] whitespace-pre-wrap rounded-md border border-white/10 bg-white/[0.03] p-3 font-mono text-sm leading-relaxed text-white outline-none focus:border-red-500/60"
             />
           </div>
           <div className="overflow-hidden rounded-lg border border-white/10 bg-black/40">
@@ -558,9 +558,9 @@ function TrackPage() {
 
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest text-white/60">Sections</h2>
-          <span className="text-[11px] text-white/40">Drag cards to reorder</span>
+          <span className="hidden text-[11px] text-white/40 sm:inline">Drag cards to reorder</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {orderedOptions.map((o) => {
             const linkProps =
               o.view === "teammate"
@@ -637,10 +637,10 @@ function NavBar({
   next: React.ReactNode;
 }) {
   return (
-    <div className="flex items-stretch gap-1 overflow-hidden rounded-lg border border-white/10 bg-black/40 p-1 shadow-inner">
+    <div className="flex w-full items-stretch gap-1 overflow-hidden rounded-lg border border-white/10 bg-black/40 p-1 shadow-inner sm:w-auto">
       <span className="w-[3px] rounded-full bg-red-500/80" />
       {prev ?? <NavPlaceholder />}
-      <span className="flex items-center whitespace-nowrap rounded-md bg-white/[0.06] px-3 text-[10px] font-bold uppercase tracking-widest text-white/50">
+      <span className="flex shrink-0 items-center whitespace-nowrap rounded-md bg-white/[0.06] px-2 text-[10px] font-bold uppercase tracking-widest text-white/50 sm:px-3">
         {center}
       </span>
       {next ?? <NavPlaceholder />}
@@ -649,7 +649,7 @@ function NavBar({
 }
 
 function NavPlaceholder() {
-  return <span className="min-w-[88px] rounded-md bg-white/[0.02]" />;
+  return <span className="min-w-[56px] flex-1 rounded-md bg-white/[0.02] sm:min-w-[88px] sm:flex-none" />;
 }
 
 function NavLink({
@@ -666,7 +666,7 @@ function NavLink({
   return (
     <Link
       {...(rest as any)}
-      className="group flex min-w-[88px] items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-bold text-white/80 transition hover:bg-red-500/15 hover:text-white hover:shadow-[0_0_12px_rgba(239,51,64,0.25)]"
+      className="group flex min-w-[56px] flex-1 items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-bold sm:min-w-[88px] sm:flex-none sm:px-3 sm:text-xs text-white/80 transition hover:bg-red-500/15 hover:text-white hover:shadow-[0_0_12px_rgba(239,51,64,0.25)]"
     >
       {dir === "prev" && (
         <span className="transition-transform group-hover:-translate-x-0.5">←</span>

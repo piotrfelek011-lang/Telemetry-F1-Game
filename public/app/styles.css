@@ -2854,3 +2854,130 @@ body.embed-upload .download-btn.small:hover {
   font-size: 12px; padding: 2px 7px;
 }
 .strategy-mini:hover { border-color: rgba(239,51,64,0.6); color: #fff; }
+
+
+/* ============================================================
+   Mobile refinements — compact controls without horizontal page overflow
+   ============================================================ */
+@media (max-width: 640px) {
+  body { padding: 8px; }
+  .app-shell {
+    width: 100%;
+    border-radius: 10px;
+    overflow: visible;
+  }
+
+  .compact-header {
+    min-width: 0;
+    padding: 14px 56px 12px 56px !important;
+  }
+  .compact-header h1,
+  .compact-header p {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Keep the many analyzer sections in one touch-scrollable row. */
+  .sticky-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--f1-red) transparent;
+  }
+  .sticky-tabs .section-tab {
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 8px 11px;
+    font-size: 0.68em;
+    white-space: nowrap;
+  }
+
+  .collapsible-content { min-width: 0; padding: 0 6px 14px; }
+  .collapsible-section { min-width: 0; border-radius: 10px; }
+  .collapsible-section .section-header {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 14px 12px 10px;
+  }
+  .collapsible-section .section-header h2 {
+    min-width: 0;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+  }
+  .collapsible-section .section-body { min-width: 0; padding: 0 12px 16px; }
+
+  #standings-container {
+    margin: 12px 0 16px;
+    padding: 10px;
+    overflow-x: auto;
+  }
+  .table-responsive,
+  .table-container { max-width: 100%; overflow-x: auto; }
+  table { min-width: 560px; }
+  thead th { padding: 10px 11px; font-size: 0.66em; }
+  td { padding: 9px 11px; font-size: 0.8em; }
+
+  .charts-grid { min-width: 0; gap: 10px; margin-bottom: 18px; }
+  .chart-container,
+  .chart-container.full-width {
+    min-width: 0 !important;
+    height: 280px !important;
+    min-height: 0 !important;
+    padding: 12px;
+    border-radius: 9px;
+  }
+  .chart-title { margin-bottom: 9px; font-size: 0.78em; letter-spacing: 0.09em; }
+  #section-progress .chart-container { height: 300px !important; }
+
+  .section-header .progress-scope-tabs {
+    width: 100%;
+    margin-left: 0 !important;
+    gap: 6px !important;
+  }
+  .progress-scope-tabs .progress-scope {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+  .progress-toggles { gap: 6px; margin-bottom: 10px; }
+  .progress-chip { max-width: 100%; padding: 6px 9px; font-size: 0.72rem; }
+
+  .compare-controls { align-items: stretch !important; padding: 10px 12px !important; }
+  #compareDriverSelect { width: 100%; min-width: 0; }
+  #compareSummary { overflow-wrap: anywhere; }
+
+  .stint-strip-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+  }
+  .strategy-add-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .strategy-row { align-items: stretch; }
+  .strategy-name { width: 100%; margin-left: 0; }
+  .strategy-segs { min-width: 0; }
+
+  .fuel-calc-container { padding: 10px; }
+  .fuel-calc-item { min-width: 0; flex-basis: 100%; }
+}
+
+@media (max-width: 380px) {
+  body { padding: 4px; }
+  .compact-header { padding-left: 54px !important; padding-right: 50px !important; }
+  .sidebar-expand { left: 8px; }
+  .season-stats-host { padding-left: 8px; padding-right: 8px; }
+  .season-stats-host #seasonSummaryCards { gap: 6px; }
+  .season-stats-host #seasonSummaryCards .stat-card { padding: 8px 9px; }
+  .season-stats-host #seasonSummaryCards .stat-value { font-size: 0.86rem; }
+}
