@@ -189,7 +189,7 @@ function TrackCard({ season, track, category, sessions }: { season: number; trac
       search={{ cat: category }}
       className="group flex flex-col overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] transition hover:-translate-y-0.5 hover:border-red-500/60"
     >
-      <div className="relative aspect-[16/9] bg-black/40">
+      <div className="relative hidden aspect-[16/9] bg-black/40 sm:block">
         {imgOk ? (
           <img
             src={imgSrc}
