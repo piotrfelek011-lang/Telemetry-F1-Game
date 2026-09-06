@@ -53,6 +53,19 @@ if (EMBED_VIEW) {
   document.addEventListener("DOMContentLoaded", () => document.body.classList.add(cls));
 }
 
+// Report content height to the host page so the upload iframe
+// can grow only while busy (processing / errors).
+if (EMBED_VIEW === "upload" && window.parent !== window) {
+  const postHeight = () => {
+    const h = Math.ceil(document.body.scrollHeight);
+    window.parent.postMessage({ type: "f1-embed-height", view: "upload", height: h }, "*");
+  };
+  window.addEventListener("load", () => {
+    postHeight();
+    try { new ResizeObserver(postHeight).observe(document.body); } catch {}
+  });
+}
+
 function _embedApplyView() {
   if (!EMBED_VIEW) return;
   const targetId = "section-" + EMBED_VIEW;
@@ -760,7 +773,9 @@ async function handleFileUpload(e) {
 }
 
 function showLoading(show) {
-  document.getElementById("loading").style.display = show ? "block" : "none";
+  const el = document.getElementById("loading");
+  el.style.display = show ? "block" : "none";
+  el.classList.toggle("active", !!show);
 }
 
 function showError(message) {
