@@ -131,6 +131,20 @@ function MainPage() {
 
 function UploadPanel({ season }: { season: number }) {
   const src = appEmbedUrl({ season, track: "", view: "upload" });
+  const [height, setHeight] = useState(112);
+
+  useEffect(() => {
+    const onMsg = (ev: MessageEvent) => {
+      const d = ev?.data;
+      if (d?.type === "f1-embed-height" && d.view === "upload") {
+        const h = Number(d.height);
+        if (Number.isFinite(h)) setHeight(Math.min(Math.max(h + 4, 96), 260));
+      }
+    };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+
   return (
     <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
       <div className="mb-1 flex items-center justify-between">
@@ -141,8 +155,8 @@ function UploadPanel({ season }: { season: number }) {
         title="Upload sessions"
         src={src}
         loading="lazy"
-        className="w-full rounded border-0 bg-transparent"
-        style={{ height: 168 }}
+        className="w-full rounded border-0 bg-transparent transition-[height] duration-200"
+        style={{ height }}
       />
     </div>
   );
