@@ -142,7 +142,7 @@ function UploadPanel({ season }: { season: number }) {
         src={src}
         loading="lazy"
         className="w-full rounded border-0 bg-transparent"
-        style={{ height: 120 }}
+        style={{ height: 168 }}
       />
     </div>
   );
