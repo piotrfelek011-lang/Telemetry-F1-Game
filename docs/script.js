@@ -773,7 +773,9 @@ async function handleFileUpload(e) {
 }
 
 function showLoading(show) {
-  document.getElementById("loading").style.display = show ? "block" : "none";
+  const el = document.getElementById("loading");
+  el.style.display = show ? "block" : "none";
+  el.classList.toggle("active", !!show);
 }
 
 function showError(message) {
