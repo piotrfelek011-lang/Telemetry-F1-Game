@@ -2592,6 +2592,16 @@ body.embed-upload .sidebar-block > summary { display: none; }
 body.embed-upload .sidebar-block-body { padding: 0; }
 body.embed-upload .main-pane { display: none; }
 body.embed-upload .sidebar-toggle { display: none !important; }
+/* Never scroll inside the upload iframe — keep it fixed height */
+body.embed-upload .sidebar,
+body.embed-upload .sidebar-block,
+body.embed-upload .sidebar-block-body { overflow: hidden !important; max-height: 100vh; scrollbar-width: none; }
+body.embed-upload .sidebar::-webkit-scrollbar { display: none; }
+/* Compact the Processing indicator so it fits the small embed */
+body.embed-upload .loading { display: none; padding: 4px 0 2px; font-size: 0.78em; }
+body.embed-upload .loading[style*="block"], body.embed-upload .loading.active { display: flex; align-items: center; justify-content: center; gap: 10px; }
+body.embed-upload .spinner { width: 22px; height: 22px; border-width: 2px; margin: 0; box-shadow: 0 0 12px rgba(225,6,0,0.25); }
+body.embed-upload .loading p { margin: 0; }
 
 /* Upload embed: nicer, less shouty */
 body.embed-upload {
