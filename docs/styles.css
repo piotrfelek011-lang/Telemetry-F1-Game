@@ -2597,6 +2597,10 @@ body.embed-upload .sidebar,
 body.embed-upload .sidebar-block,
 body.embed-upload .sidebar-block-body { overflow: hidden !important; max-height: 100vh; scrollbar-width: none; }
 body.embed-upload .sidebar::-webkit-scrollbar { display: none; }
+/* Natural height so the host iframe can size itself to content */
+html.embed-upload, body.embed-upload,
+body.embed-upload .app-shell,
+body.embed-upload .sidebar { height: auto !important; min-height: 0 !important; }
 /* Compact the Processing indicator so it fits the small embed */
 body.embed-upload .loading { display: none; padding: 4px 0 2px; font-size: 0.78em; }
 body.embed-upload .loading[style*="block"], body.embed-upload .loading.active { display: flex; align-items: center; justify-content: center; gap: 10px; }
