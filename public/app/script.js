@@ -515,6 +515,16 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     updateQualiGapButton();
   }
+
+  const qualiSectorToggleBtn = document.getElementById("qualiSectorToggleBtn");
+  if (qualiSectorToggleBtn) {
+    qualiSectorToggleBtn.addEventListener("click", () => {
+      qualiTimeMode = qualiTimeMode === "lap" ? "sectors" : "lap";
+      updateQualiSectorButton();
+      renderQualiResults();
+    });
+    updateQualiSectorButton();
+  }
   // Setup download template button
   const dlBtn = document.getElementById("downloadTemplateBtn");
   if (dlBtn) dlBtn.addEventListener("click", handleDownloadTemplate);
