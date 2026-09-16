@@ -6290,7 +6290,7 @@ function gridFromQualiFor(session, teamsMap) {
         byPos.set(r.pos, {
           position: r.pos,
           name,
-          team: teams[r.name] || teamForDriver(teams, name) || "Unassigned",
+          team: teamForDriver(teams, r.name) || teamForDriver(teams, name) || "Unassigned",
           time: r.best_lap && r.best_lap !== "N/A" ? r.best_lap : "",
           source: label,
         });
