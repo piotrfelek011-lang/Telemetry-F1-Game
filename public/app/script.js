@@ -853,6 +853,23 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     .filter((p) => p["lap-number"] >= 0)
     .map((p) => ({ lap: p["lap-number"], position: p.position }));
 
+  // Fallback when the file has no per-lap position history for the player
+  // (seen in some Driver-career exports): derive a minimal start→finish line
+  // from the final classification so the Race Story still renders.
+  if (!position_history.length) {
+    const own = (classification_data || []).find(
+      (e) => _norm(e["driver-name"]) === PLAYER,
+    );
+    const fc = own?.["final-classification"] || {};
+    const finishPos = Number(fc.position || 0);
+    const lapsDone = Number(fc["num-laps"] || 0);
+    if (finishPos > 0) {
+      const gridPos = Number(fc["grid-position"] || finishPos);
+      position_history.push({ lap: 0, position: gridPos });
+      position_history.push({ lap: Math.max(1, lapsDone), position: finishPos });
+    }
+  }
+
   // Podium = top 3 by final-classification.position
   const podium = [];
   const sortedClass = [...(classification_data || [])]
