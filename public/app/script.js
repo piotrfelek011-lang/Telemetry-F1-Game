@@ -2483,6 +2483,12 @@ function updateQualiGapButton() {
   }
 }
 
+function updateQualiSectorButton() {
+  const btn = document.getElementById("qualiSectorToggleBtn");
+  if (!btn) return;
+  btn.textContent = qualiTimeMode === "sectors" ? "Show Best Lap" : "Show Sectors";
+}
+
 function renderSessionInfo() {
   const info = currentData;
   const laps = info.lap_history;
