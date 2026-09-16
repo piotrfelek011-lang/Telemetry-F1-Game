@@ -4149,7 +4149,7 @@ function renderStandingsTable() {
 
   driverNames.forEach((name, idx) => {
     const d = driversMap[name];
-    const team = teamsAssigned[name] || "Unassigned";
+    const team = teamForDriver(teamsAssigned, name) || "Unassigned";
     const teamColor = teamColorFor(team);
     const leaderClass = idx === 0 ? " is-leader" : "";
     html += `<tr class="standings-row${leaderClass}"><td class="col-rank rank-cell"><span class="rank-num">${idx + 1}</span></td><td class="col-driver driver-cell" style="--team-color:${teamColor};"><span class="driver-name">${name.toUpperCase()}</span><span class="driver-team">${team}</span></td>`;
@@ -4188,7 +4188,7 @@ function renderStandingsTable() {
   try {
     const teamAgg = {};
     driverNames.forEach((name) => {
-      const team = teamsAssigned[name] || "Unassigned";
+      const team = teamForDriver(teamsAssigned, name) || "Unassigned";
       if (!teamAgg[team]) teamAgg[team] = { points: 0, drivers: [] };
       teamAgg[team].points += driversMap[name].points || 0;
       teamAgg[team].drivers.push(name);
@@ -4343,7 +4343,7 @@ function renderRecordsTable() {
       driverAgg[name].fastest_laps += s.fastest_laps || 0;
       driverAgg[name].dnfs += s.dnfs || 0;
       driverAgg[name].seasons.add(season);
-      if (teams[name]) driverAgg[name].lastTeam = teams[name];
+      { const _t = teamForDriver(teams, name); if (_t) driverAgg[name].lastTeam = _t; }
     });
 
 
@@ -4358,7 +4358,7 @@ function renderRecordsTable() {
     // Constructor aggregates for this season
     const teamSeason = {};
     Object.entries(standings).forEach(([name, s]) => {
-      const team = teams[name] || "Unassigned";
+      const team = teamForDriver(teams, name) || "Unassigned";
       if (!teamSeason[team]) teamSeason[team] = { points: 0, wins: 0, podiums: 0 };
       teamSeason[team].points += s.points;
       teamSeason[team].wins += s.wins;
@@ -4396,8 +4396,8 @@ function renderRecordsTable() {
       const p1 = posFor(1);
       const p2 = posFor(2);
       if (!p1 || !p2) return;
-      const t1 = teams[p1.name] || null;
-      const t2 = teams[p2.name] || null;
+      const t1 = teamForDriver(teams, p1.name) || null;
+      const t2 = teamForDriver(teams, p2.name) || null;
       if (!t1 || !t2 || t1 !== t2 || t1 === "Unassigned") return;
       if (!teamAgg[t1]) {
         teamAgg[t1] = { points: 0, wins: 0, podiums: 0, one_twos: 0, front_row_lockouts: 0, titles: 0, seasons: new Set() };
@@ -4635,7 +4635,7 @@ function renderDriverAssignments(driverNames) {
 
   // Build cards
   driverNames.forEach((name) => {
-    const teamVal = teams[name] || "";
+    const teamVal = teamForDriver(teams, name) || "";
     const card = document.createElement("div");
     card.className = "driver-card";
     card.setAttribute("data-driver", name);
@@ -6220,7 +6220,7 @@ function buildStartingGridData() {
       .map((e) => ({
         position: Number(e.position),
         name: String(e.name).toUpperCase(),
-        team: e.team || teams[e.name] || "Unassigned",
+        team: e.team || teamForDriver(teams, e.name) || "Unassigned",
         time: e.lap_time_str || "",
         source: "Race start (lap 0)",
       }));
@@ -6290,7 +6290,7 @@ function gridFromQualiFor(session, teamsMap) {
         byPos.set(r.pos, {
           position: r.pos,
           name,
-          team: teams[r.name] || teams[name] || "Unassigned",
+          team: teams[r.name] || teamForDriver(teams, name) || "Unassigned",
           time: r.best_lap && r.best_lap !== "N/A" ? r.best_lap : "",
           source: label,
         });
@@ -6454,7 +6454,7 @@ function progressBuildSeries() {
   // Team cumulative points
   const teamPoints = {};
   Object.keys(driverPoints).forEach((name) => {
-    const team = teams[name] || "Unassigned";
+    const team = teamForDriver(teams, name) || "Unassigned";
     if (!teamPoints[team]) teamPoints[team] = new Array(rounds).fill(0);
     for (let i = 0; i < rounds; i++) teamPoints[team][i] += driverPoints[name][i];
   });
@@ -6478,7 +6478,7 @@ function progressBuildSeries() {
   Object.keys(driverPoints)
     .sort((a, b) => driverPoints[b][rounds - 1] - driverPoints[a][rounds - 1])
     .forEach((name) => {
-      const team = teams[name] || "Unassigned";
+      const team = teamForDriver(teams, name) || "Unassigned";
       seenPerTeam[team] = (seenPerTeam[team] || 0) + 1;
       driverStyle[name] = {
         color: teamColorFor(team),
