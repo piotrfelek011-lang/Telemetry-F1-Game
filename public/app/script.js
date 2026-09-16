@@ -879,10 +879,10 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   });
 
   const overtakes_made = overtakeRecords
-    .filter((o) => o["overtaking-driver-name"] === playerName)
+    .filter((o) => _norm(o["overtaking-driver-name"]) === PLAYER)
     .map((o) => ({ lap: o["overtaking-driver-lap"], opponent: o["overtaken-driver-name"] }));
   const overtakes_suffered = overtakeRecords
-    .filter((o) => o["overtaken-driver-name"] === playerName)
+    .filter((o) => _norm(o["overtaken-driver-name"]) === PLAYER)
     .map((o) => ({ lap: o["overtaken-driver-lap"], opponent: o["overtaking-driver-name"] }));
 
   // Pace delta vs field median (in ms)
