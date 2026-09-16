@@ -2373,13 +2373,21 @@ function renderQualiResults() {
       timeStringToSeconds(res.best_lap || res.q1 || res.q2 || res.q3 || ""),
     );
 
+    // Sector value in seconds ("28.412" or "1:02.118" both supported)
+    const secSeconds = (v) => {
+      if (v == null || v === "") return null;
+      const str = String(v);
+      const n = str.includes(":") ? timeStringToSeconds(str) : parseFloat(str);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
     // Best (purple) sector times across the segment
     const secBest = ["s1", "s2", "s3"].map((k) => {
       const vals = sortedResults
-        .map((r) => parseFloat(r[k]))
-        .filter((v) => Number.isFinite(v) && v > 0);
+        .map((r) => secSeconds(r[k]))
+        .filter((v) => v != null);
       return vals.length ? Math.min(...vals) : null;
     });
+    const hasSectors = secBest.some((v) => v != null);
 
 
     sortedResults.forEach((res, idx) => {
