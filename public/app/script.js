@@ -893,7 +893,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     ),
   }));
   const playerLaps =
-    driverLapTimes.find((d) => d.name === playerName)?.laps || [];
+    driverLapTimes.find((d) => d.name === PLAYER)?.laps || [];
   const pace_delta = [];
   for (let i = 0; i < playerLaps.length; i++) {
     const playerMs = playerLaps[i];
