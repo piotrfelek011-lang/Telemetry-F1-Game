@@ -841,7 +841,12 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   const overtakeRecords = rootData["overtakes"]?.records || [];
   const speedTraps = rootData["speed-trap-records"] || [];
 
-  const playerPos = positionHistoryRoot.find((p) => p.name === playerName);
+  // Driver names arrive with inconsistent casing/whitespace depending on the
+  // career type (Driver career files often differ from My Team ones), so all
+  // player matching below is normalized.
+  const _norm = (v) => String(v == null ? "" : v).trim().toUpperCase();
+  const PLAYER = _norm(playerName);
+  const playerPos = positionHistoryRoot.find((p) => _norm(p.name) === PLAYER);
   if (!playerPos && !classification_data?.length) return null;
 
   const position_history = (playerPos?.["driver-position-history"] || [])
