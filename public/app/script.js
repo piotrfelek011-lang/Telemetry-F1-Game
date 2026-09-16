@@ -2429,15 +2429,30 @@ function renderQualiResults() {
         }
       }
 
+      let timeCells;
+      if (sectorMode) {
+        timeCells = ["s1", "s2", "s3"]
+          .map((k, i) => {
+            const raw = res[k];
+            const val = secSeconds(raw);
+            if (val == null) return `<td class="text-center col-sec">-</td>`;
+            const isBest = secBest[i] != null && Math.abs(val - secBest[i]) < 0.0005;
+            return `<td class="text-center col-sec${isBest ? " sector-best" : ""}">${raw}</td>`;
+          })
+          .join("");
+      } else {
+        timeCells = `<td class="text-center col-time">${res.best_lap || res.q1 || "-"}</td>`;
+      }
+
       tableHtml += `
         <tr style="${rowStyle}">
-          <td class="text-center"><strong>${res.position || "-"}</strong></td>
-          <td style="border-left: 4px solid ${teamColor} !important; padding-left: 10px;">
+          <td class="text-center col-pos"><strong>${res.position || "-"}</strong></td>
+          <td class="col-drv" style="border-left: 4px solid ${teamColor} !important; padding-left: 10px;">
             <strong>${res.name}</strong><br>
             <span class="team-name-sub">${team}</span>
           </td>
-          <td class="text-center">${res.q1 || res.best_lap || "-"}</td>
-          <td class="text-center">${gapLabel}</td>
+          ${timeCells}
+          <td class="text-center col-gap">${gapLabel}</td>
         </tr>`;
     });
 
