@@ -864,9 +864,9 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     )
     .slice(0, 3);
   sortedClass.forEach((entry) => {
-    const name = String(entry["driver-name"] || "").toUpperCase();
-    if (name === playerName) return; // shown as the main line
-    const ph = positionHistoryRoot.find((p) => p.name === name);
+    const name = _norm(entry["driver-name"]);
+    if (name === PLAYER) return; // shown as the main line
+    const ph = positionHistoryRoot.find((p) => _norm(p.name) === name);
     if (!ph) return;
     podium.push({
       name,
