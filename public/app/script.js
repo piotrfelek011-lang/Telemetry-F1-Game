@@ -32,6 +32,33 @@ let allSessions = [];
 let currentData = null;
 let currentSeason = 1;
 let qualiGapMode = "leader";
+let qualiTimeMode = "lap"; // "lap" | "sectors"
+
+// Team lookup that tolerates casing differences between the
+// telemetry driver names (UPPERCASE) and manually saved keys.
+function teamForDriver(teams, name) {
+  if (!teams || !name) return "";
+  if (teams[name]) return teams[name];
+  const key = String(name).trim().toUpperCase();
+  for (const k of Object.keys(teams)) {
+    if (String(k).trim().toUpperCase() === key) return teams[k];
+  }
+  return "";
+}
+
+// Sector times of a driver's best lap (from the packet session history).
+function bestLapSectors(entry) {
+  const sh = (entry && entry["session-history"]) || {};
+  const laps = sh["lap-history-data"] || [];
+  const idx = (sh["best-lap-time-lap-num"] || 0) - 1;
+  const lap = laps[idx] || null;
+  if (!lap) return { s1: "", s2: "", s3: "" };
+  return {
+    s1: lap["sector-1-time-str"] || "",
+    s2: lap["sector-2-time-str"] || "",
+    s3: lap["sector-3-time-str"] || "",
+  };
+}
 const charts = {};
 
 // ---------------------------------------------------------------
@@ -324,6 +351,22 @@ const trackToFlag = {
   "abu dhabi": "🇦🇪",
 };
 
+// Full race lap counts per track (100 % race distance) matching the F1 26 game calendar.
+const TRACK_RACE_LAPS = {
+  melbourne: 58, shanghai: 56, suzuka: 53, sakhir: 57, jeddah: 50, miami: 57,
+  montreal: 70, monaco: 78, catalunya: 66, austria: 71, austria_reverse: 71,
+  silverstone: 52, silverstone_reverse: 52, spa: 44, hungaroring: 70,
+  zandvoort_reverse: 72, zandvoort: 72, monza: 53,
+  madring: 57, madrid: 57, baku: 51, singapore: 61, texas: 56, austin: 56,
+  mexico: 71, mexico_city: 71, interlagos: 71, brazil: 71, sao_paulo: 71,
+  las_vegas: 50, vegas: 50, losail: 57, qatar: 57, abu_dhabi: 58,
+  yas_marina: 58, abu: 58, imola: 63, portimao: 66,
+};
+function getTrackRaceLength(trackName) {
+  const key = normalizeTrackName(trackName);
+  return TRACK_RACE_LAPS[key] || null;
+}
+
 // Initialize Supabase lazily so GitHub Pages stays interactive even if the CDN is slow/blocked.
 const SUPABASE_URL = "https://kbjjtiajugxvhoboqxwb.supabase.co";
 const SUPABASE_ANON_KEY =
@@ -363,9 +406,11 @@ const F1_2026_CALENDAR = [
   "catalunya",
   "austria_reverse",
   "austria",
+  "silverstone_reverse",
   "silverstone",
   "spa",
   "hungaroring",
+  "zandvoort_reverse",
   "zandvoort",
   "monza",
   "madring",
@@ -393,9 +438,11 @@ const NOTES_TRACKS = [
   { key: "catalunya", label: "Catalunya", flag: "🇪🇸" },
   { key: "austria_reverse", label: "Red Bull Ring (Reverse)", flag: "🇦🇹" },
   { key: "austria", label: "Red Bull Ring", flag: "🇦🇹" },
+  { key: "silverstone_reverse", label: "Silverstone (Reverse)", flag: "🇬🇧" },
   { key: "silverstone", label: "Silverstone", flag: "🇬🇧" },
   { key: "spa", label: "Spa", flag: "🇧🇪" },
   { key: "hungaroring", label: "Hungaroring", flag: "🇭🇺" },
+  { key: "zandvoort_reverse", label: "Zandvoort (Reverse)", flag: "🇳🇱" },
   { key: "zandvoort", label: "Zandvoort", flag: "🇳🇱" },
   { key: "monza", label: "Monza", flag: "🇮🇹" },
   { key: "madring", label: "Madring", flag: "🇪🇸" },
@@ -1158,6 +1205,7 @@ function processTelemetryData(data) {
                     e["final-classification"]?.["q3-time"] ||
                     e["q3-time"] ||
                     "",
+                  ...bestLapSectors(e),
                 }))
               : Array.isArray(tyre_stints_v2)
                 ? tyre_stints_v2.map((e) => ({
@@ -2156,6 +2204,13 @@ function renderPracticeTable() {
 }
 
 function renderFuelCalculatorUI(container) {
+  const fullLaps = currentData ? getTrackRaceLength(currentData.track_name) : null;
+  const pct25 = fullLaps ? Math.round(fullLaps * 0.25) : "";
+  const pct50 = fullLaps ? Math.round(fullLaps * 0.5) : "";
+  const presetInfo = fullLaps
+    ? `Race length presets for ${escapeHtml(currentData.track_name)} (≈${fullLaps} laps).`
+    : "Race length presets unavailable for this track.";
+
   container.innerHTML = `
     <div class="fuel-calc-item">
       <label>Avg Usage (Selected)</label>
@@ -2164,6 +2219,12 @@ function renderFuelCalculatorUI(container) {
     <div class="fuel-calc-item">
       <label>Target Laps</label>
       <input type="number" id="targetLapsInput" value="10" min="1" step="1">
+      <div class="fuel-calc-presets" data-has-laps="${fullLaps ? "1" : "0"}">
+        <button type="button" class="fuel-preset-btn" data-pct="25" data-laps="${pct25}">25 %</button>
+        <button type="button" class="fuel-preset-btn" data-pct="50" data-laps="${pct50}">50 %</button>
+        <button type="button" class="fuel-preset-btn fuel-preset-full" data-pct="100" data-laps="${fullLaps ?? ""}">Full</button>
+      </div>
+      <div class="fuel-preset-info">${presetInfo}</div>
     </div>
     <div class="fuel-calc-item">
       <label>Fuel Needed</label>
@@ -2175,6 +2236,15 @@ function renderFuelCalculatorUI(container) {
   `;
   const input = container.querySelector("#targetLapsInput");
   input.oninput = () => updateFuelCalculator();
+  container.querySelectorAll(".fuel-preset-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const laps = parseInt(btn.dataset.laps, 10);
+      if (Number.isFinite(laps) && laps > 0) {
+        input.value = String(laps);
+        updateFuelCalculator();
+      }
+    });
+  });
 }
 
 function updateFuelCalculator() {
@@ -2250,18 +2320,25 @@ function renderQualiResults() {
     tableDiv.className = "table-container";
 
     const weatherIcon = determineWeatherIcon(session);
+    const sectorMode = qualiTimeMode === "sectors";
     let tableHtml = `
       <h3 style="margin-bottom: 12px; color: var(--accent-red); font-size: 0.9rem; text-transform: uppercase; display:flex; align-items:center; gap:8px;">
         <span>⏱️ ${segmentTitle}</span>
         <span style="font-size:1.1rem;">${weatherIcon}</span>
       </h3>
-      <table>
+      <table class="quali-table${sectorMode ? " is-sectors" : ""}">
         <thead>
           <tr>
-            <th class="text-center" style="width: 60px;">Pos</th>
-            <th>Driver</th>
-            <th class="text-center">Best Lap</th>
-            <th class="text-center" style="width: 105px;">Gap</th>
+            <th class="text-center col-pos">P</th>
+            <th class="col-drv">Driver</th>
+            ${
+              sectorMode
+                ? `<th class="text-center col-sec">S1</th>
+                   <th class="text-center col-sec">S2</th>
+                   <th class="text-center col-sec">S3</th>`
+                : `<th class="text-center col-time">Best Lap</th>`
+            }
+            <th class="text-center col-gap">Gap</th>
           </tr>
         </thead>
         <tbody>`;
@@ -2273,6 +2350,15 @@ function renderQualiResults() {
     const lapTimes = sortedResults.map((res) =>
       timeStringToSeconds(res.best_lap || res.q1 || res.q2 || res.q3 || ""),
     );
+
+    // Best (purple) sector times across the segment
+    const secBest = ["s1", "s2", "s3"].map((k) => {
+      const vals = sortedResults
+        .map((r) => parseFloat(r[k]))
+        .filter((v) => Number.isFinite(v) && v > 0);
+      return vals.length ? Math.min(...vals) : null;
+    });
+
 
     sortedResults.forEach((res, idx) => {
       const isPlayer = res.name === currentData.driver_name;
@@ -3437,8 +3523,8 @@ function createChart(
         },
     grid: {
       color: isMobile
-        ? "rgba(255, 255, 255, 0.05)"
-        : "rgba(255, 255, 255, 0.1)",
+        ? "rgba(255, 255, 255, 0.12)"
+        : "rgba(255, 255, 255, 0.18)",
       ...(yAxisOverride.grid && typeof yAxisOverride.grid === "object"
         ? yAxisOverride.grid
         : {}),
@@ -5901,7 +5987,7 @@ function renderPaceDeltaChart() {
             color: (ctx) =>
               ctx.tick.value === 0
                 ? "rgba(255,255,255,0.5)"
-                : "rgba(255,255,255,0.08)",
+                : "rgba(255,255,255,0.16)",
           },
         },
       },
@@ -6454,7 +6540,7 @@ function renderSeasonProgress() {
       x: {
         title: { display: true, text: "Round" },
         ticks: { color: "#bbb", maxRotation: 60, minRotation: 0 },
-        grid: { color: "rgba(255,255,255,0.06)" },
+        grid: { color: "rgba(255,255,255,0.14)" },
       },
     },
   };
@@ -6469,14 +6555,14 @@ function renderSeasonProgress() {
             title: { display: true, text: "Points" },
             beginAtZero: true,
             ticks: { color: "#bbb" },
-            grid: { color: "rgba(255,255,255,0.06)" },
+            grid: { color: "rgba(255,255,255,0.14)" },
           }
         : {
             title: { display: true, text: "Position" },
             reverse: true,
             min: 1,
             ticks: { color: "#bbb", stepSize: 1, precision: 0 },
-            grid: { color: "rgba(255,255,255,0.06)" },
+            grid: { color: "rgba(255,255,255,0.14)" },
           };
     charts[canvasId] = new Chart(el.getContext("2d"), {
       type: "line",
