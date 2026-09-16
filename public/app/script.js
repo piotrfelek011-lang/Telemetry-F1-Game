@@ -2400,7 +2400,7 @@ function renderQualiResults() {
       if (lowerTitle.includes("1") && pos > 16) isEliminated = true;
       else if (lowerTitle.includes("2") && pos > 10) isEliminated = true;
 
-      const team = teamsAssigned[res.name] || "Unassigned";
+      const team = teamForDriver(teamsAssigned, res.name) || "Unassigned";
       const teamColor = teamColorFor(team);
 
       let rowStyle = "";
