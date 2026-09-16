@@ -515,6 +515,16 @@ window.addEventListener("DOMContentLoaded", () => {
     });
     updateQualiGapButton();
   }
+
+  const qualiSectorToggleBtn = document.getElementById("qualiSectorToggleBtn");
+  if (qualiSectorToggleBtn) {
+    qualiSectorToggleBtn.addEventListener("click", () => {
+      qualiTimeMode = qualiTimeMode === "lap" ? "sectors" : "lap";
+      updateQualiSectorButton();
+      renderQualiResults();
+    });
+    updateQualiSectorButton();
+  }
   // Setup download template button
   const dlBtn = document.getElementById("downloadTemplateBtn");
   if (dlBtn) dlBtn.addEventListener("click", handleDownloadTemplate);
@@ -841,12 +851,34 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   const overtakeRecords = rootData["overtakes"]?.records || [];
   const speedTraps = rootData["speed-trap-records"] || [];
 
-  const playerPos = positionHistoryRoot.find((p) => p.name === playerName);
+  // Driver names arrive with inconsistent casing/whitespace depending on the
+  // career type (Driver career files often differ from My Team ones), so all
+  // player matching below is normalized.
+  const _norm = (v) => String(v == null ? "" : v).trim().toUpperCase();
+  const PLAYER = _norm(playerName);
+  const playerPos = positionHistoryRoot.find((p) => _norm(p.name) === PLAYER);
   if (!playerPos && !classification_data?.length) return null;
 
   const position_history = (playerPos?.["driver-position-history"] || [])
     .filter((p) => p["lap-number"] >= 0)
     .map((p) => ({ lap: p["lap-number"], position: p.position }));
+
+  // Fallback when the file has no per-lap position history for the player
+  // (seen in some Driver-career exports): derive a minimal start→finish line
+  // from the final classification so the Race Story still renders.
+  if (!position_history.length) {
+    const own = (classification_data || []).find(
+      (e) => _norm(e["driver-name"]) === PLAYER,
+    );
+    const fc = own?.["final-classification"] || {};
+    const finishPos = Number(fc.position || 0);
+    const lapsDone = Number(fc["num-laps"] || 0);
+    if (finishPos > 0) {
+      const gridPos = Number(fc["grid-position"] || finishPos);
+      position_history.push({ lap: 0, position: gridPos });
+      position_history.push({ lap: Math.max(1, lapsDone), position: finishPos });
+    }
+  }
 
   // Podium = top 3 by final-classification.position
   const podium = [];
@@ -859,9 +891,9 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     )
     .slice(0, 3);
   sortedClass.forEach((entry) => {
-    const name = String(entry["driver-name"] || "").toUpperCase();
-    if (name === playerName) return; // shown as the main line
-    const ph = positionHistoryRoot.find((p) => p.name === name);
+    const name = _norm(entry["driver-name"]);
+    if (name === PLAYER) return; // shown as the main line
+    const ph = positionHistoryRoot.find((p) => _norm(p.name) === name);
     if (!ph) return;
     podium.push({
       name,
@@ -874,10 +906,10 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
   });
 
   const overtakes_made = overtakeRecords
-    .filter((o) => o["overtaking-driver-name"] === playerName)
+    .filter((o) => _norm(o["overtaking-driver-name"]) === PLAYER)
     .map((o) => ({ lap: o["overtaking-driver-lap"], opponent: o["overtaken-driver-name"] }));
   const overtakes_suffered = overtakeRecords
-    .filter((o) => o["overtaken-driver-name"] === playerName)
+    .filter((o) => _norm(o["overtaken-driver-name"]) === PLAYER)
     .map((o) => ({ lap: o["overtaken-driver-lap"], opponent: o["overtaking-driver-name"] }));
 
   // Pace delta vs field median (in ms)
@@ -888,7 +920,7 @@ function buildRaceStory(rootData, playerName, playerTeam, classification_data) {
     ),
   }));
   const playerLaps =
-    driverLapTimes.find((d) => d.name === playerName)?.laps || [];
+    driverLapTimes.find((d) => d.name === PLAYER)?.laps || [];
   const pace_delta = [];
   for (let i = 0; i < playerLaps.length; i++) {
     const playerMs = playerLaps[i];
@@ -2351,13 +2383,21 @@ function renderQualiResults() {
       timeStringToSeconds(res.best_lap || res.q1 || res.q2 || res.q3 || ""),
     );
 
+    // Sector value in seconds ("28.412" or "1:02.118" both supported)
+    const secSeconds = (v) => {
+      if (v == null || v === "") return null;
+      const str = String(v);
+      const n = str.includes(":") ? timeStringToSeconds(str) : parseFloat(str);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
     // Best (purple) sector times across the segment
     const secBest = ["s1", "s2", "s3"].map((k) => {
       const vals = sortedResults
-        .map((r) => parseFloat(r[k]))
-        .filter((v) => Number.isFinite(v) && v > 0);
+        .map((r) => secSeconds(r[k]))
+        .filter((v) => v != null);
       return vals.length ? Math.min(...vals) : null;
     });
+    const hasSectors = secBest.some((v) => v != null);
 
 
     sortedResults.forEach((res, idx) => {
@@ -2370,7 +2410,7 @@ function renderQualiResults() {
       if (lowerTitle.includes("1") && pos > 16) isEliminated = true;
       else if (lowerTitle.includes("2") && pos > 10) isEliminated = true;
 
-      const team = teamsAssigned[res.name] || "Unassigned";
+      const team = teamForDriver(teamsAssigned, res.name) || "Unassigned";
       const teamColor = teamColorFor(team);
 
       let rowStyle = "";
@@ -2399,15 +2439,30 @@ function renderQualiResults() {
         }
       }
 
+      let timeCells;
+      if (sectorMode) {
+        timeCells = ["s1", "s2", "s3"]
+          .map((k, i) => {
+            const raw = res[k];
+            const val = secSeconds(raw);
+            if (val == null) return `<td class="text-center col-sec">-</td>`;
+            const isBest = secBest[i] != null && Math.abs(val - secBest[i]) < 0.0005;
+            return `<td class="text-center col-sec${isBest ? " sector-best" : ""}">${raw}</td>`;
+          })
+          .join("");
+      } else {
+        timeCells = `<td class="text-center col-time">${res.best_lap || res.q1 || "-"}</td>`;
+      }
+
       tableHtml += `
         <tr style="${rowStyle}">
-          <td class="text-center"><strong>${res.position || "-"}</strong></td>
-          <td style="border-left: 4px solid ${teamColor} !important; padding-left: 10px;">
+          <td class="text-center col-pos"><strong>${res.position || "-"}</strong></td>
+          <td class="col-drv" style="border-left: 4px solid ${teamColor} !important; padding-left: 10px;">
             <strong>${res.name}</strong><br>
             <span class="team-name-sub">${team}</span>
           </td>
-          <td class="text-center">${res.q1 || res.best_lap || "-"}</td>
-          <td class="text-center">${gapLabel}</td>
+          ${timeCells}
+          <td class="text-center col-gap">${gapLabel}</td>
         </tr>`;
     });
 
@@ -2426,6 +2481,12 @@ function updateQualiGapButton() {
   } else {
     btn.textContent = "Switch to Gap to Leader";
   }
+}
+
+function updateQualiSectorButton() {
+  const btn = document.getElementById("qualiSectorToggleBtn");
+  if (!btn) return;
+  btn.textContent = qualiTimeMode === "sectors" ? "Show Best Lap" : "Show Sectors";
 }
 
 function renderSessionInfo() {
@@ -4088,7 +4149,7 @@ function renderStandingsTable() {
 
   driverNames.forEach((name, idx) => {
     const d = driversMap[name];
-    const team = teamsAssigned[name] || "Unassigned";
+    const team = teamForDriver(teamsAssigned, name) || "Unassigned";
     const teamColor = teamColorFor(team);
     const leaderClass = idx === 0 ? " is-leader" : "";
     html += `<tr class="standings-row${leaderClass}"><td class="col-rank rank-cell"><span class="rank-num">${idx + 1}</span></td><td class="col-driver driver-cell" style="--team-color:${teamColor};"><span class="driver-name">${name.toUpperCase()}</span><span class="driver-team">${team}</span></td>`;
@@ -4127,7 +4188,7 @@ function renderStandingsTable() {
   try {
     const teamAgg = {};
     driverNames.forEach((name) => {
-      const team = teamsAssigned[name] || "Unassigned";
+      const team = teamForDriver(teamsAssigned, name) || "Unassigned";
       if (!teamAgg[team]) teamAgg[team] = { points: 0, drivers: [] };
       teamAgg[team].points += driversMap[name].points || 0;
       teamAgg[team].drivers.push(name);
@@ -4282,7 +4343,7 @@ function renderRecordsTable() {
       driverAgg[name].fastest_laps += s.fastest_laps || 0;
       driverAgg[name].dnfs += s.dnfs || 0;
       driverAgg[name].seasons.add(season);
-      if (teams[name]) driverAgg[name].lastTeam = teams[name];
+      { const _t = teamForDriver(teams, name); if (_t) driverAgg[name].lastTeam = _t; }
     });
 
 
@@ -4297,7 +4358,7 @@ function renderRecordsTable() {
     // Constructor aggregates for this season
     const teamSeason = {};
     Object.entries(standings).forEach(([name, s]) => {
-      const team = teams[name] || "Unassigned";
+      const team = teamForDriver(teams, name) || "Unassigned";
       if (!teamSeason[team]) teamSeason[team] = { points: 0, wins: 0, podiums: 0 };
       teamSeason[team].points += s.points;
       teamSeason[team].wins += s.wins;
@@ -4335,8 +4396,8 @@ function renderRecordsTable() {
       const p1 = posFor(1);
       const p2 = posFor(2);
       if (!p1 || !p2) return;
-      const t1 = teams[p1.name] || null;
-      const t2 = teams[p2.name] || null;
+      const t1 = teamForDriver(teams, p1.name) || null;
+      const t2 = teamForDriver(teams, p2.name) || null;
       if (!t1 || !t2 || t1 !== t2 || t1 === "Unassigned") return;
       if (!teamAgg[t1]) {
         teamAgg[t1] = { points: 0, wins: 0, podiums: 0, one_twos: 0, front_row_lockouts: 0, titles: 0, seasons: new Set() };
@@ -4574,7 +4635,7 @@ function renderDriverAssignments(driverNames) {
 
   // Build cards
   driverNames.forEach((name) => {
-    const teamVal = teams[name] || "";
+    const teamVal = teamForDriver(teams, name) || "";
     const card = document.createElement("div");
     card.className = "driver-card";
     card.setAttribute("data-driver", name);
@@ -6159,7 +6220,7 @@ function buildStartingGridData() {
       .map((e) => ({
         position: Number(e.position),
         name: String(e.name).toUpperCase(),
-        team: e.team || teams[e.name] || "Unassigned",
+        team: e.team || teamForDriver(teams, e.name) || "Unassigned",
         time: e.lap_time_str || "",
         source: "Race start (lap 0)",
       }));
@@ -6229,7 +6290,7 @@ function gridFromQualiFor(session, teamsMap) {
         byPos.set(r.pos, {
           position: r.pos,
           name,
-          team: teams[r.name] || teams[name] || "Unassigned",
+          team: teamForDriver(teams, r.name) || teamForDriver(teams, name) || "Unassigned",
           time: r.best_lap && r.best_lap !== "N/A" ? r.best_lap : "",
           source: label,
         });
@@ -6393,7 +6454,7 @@ function progressBuildSeries() {
   // Team cumulative points
   const teamPoints = {};
   Object.keys(driverPoints).forEach((name) => {
-    const team = teams[name] || "Unassigned";
+    const team = teamForDriver(teams, name) || "Unassigned";
     if (!teamPoints[team]) teamPoints[team] = new Array(rounds).fill(0);
     for (let i = 0; i < rounds; i++) teamPoints[team][i] += driverPoints[name][i];
   });
@@ -6417,7 +6478,7 @@ function progressBuildSeries() {
   Object.keys(driverPoints)
     .sort((a, b) => driverPoints[b][rounds - 1] - driverPoints[a][rounds - 1])
     .forEach((name) => {
-      const team = teams[name] || "Unassigned";
+      const team = teamForDriver(teams, name) || "Unassigned";
       seenPerTeam[team] = (seenPerTeam[team] || 0) + 1;
       driverStyle[name] = {
         color: teamColorFor(team),
