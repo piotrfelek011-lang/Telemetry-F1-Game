@@ -1218,6 +1218,8 @@ function processTelemetryData(data) {
                   name: String(
                     e["driver-name"] || e.name || "UNKNOWN",
                   ).toUpperCase(),
+                  team: e.team || e["team-name"] || "",
+
                   position:
                     e["final-classification"]?.["position"] ||
                     e["track-position"] ||
