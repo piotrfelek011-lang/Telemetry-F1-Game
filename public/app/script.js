@@ -1188,7 +1188,10 @@ function processTelemetryData(data) {
         let player_stints_data = [];
         let pit_laps_from_stints = {};
         if (Array.isArray(tyre_stints_v2)) {
-          const entry = tyre_stints_v2.find((e) => e.name === driver_name);
+          const entry = tyre_stints_v2.find(
+            (e) => String(e.name || "").trim().toUpperCase() === driver_name,
+          );
+
           if (entry) {
             player_stints_data = entry["tyre-stint-history"] || [];
             player_stints_data.forEach((stint, i) => {
