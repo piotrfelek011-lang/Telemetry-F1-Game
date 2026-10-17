@@ -2665,10 +2665,14 @@ function renderQualiResults() {
       if (lowerTitle.includes("1") && pos > 16) isEliminated = true;
       else if (lowerTitle.includes("2") && pos > 10) isEliminated = true;
 
+<<<<<<< HEAD
       const team =
         teamForDriver(teamsAssigned, res.name) ||
         canonicalTeam(res.team) ||
         "Unassigned";
+=======
+      const team = teamForDriver(teamsAssigned, res.name) || "Unassigned";
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
       const teamColor = teamColorFor(team);
 
       let rowStyle = "";
@@ -6624,7 +6628,11 @@ function buildStartingGridData() {
       .map((e) => ({
         position: Number(e.position),
         name: String(e.name).toUpperCase(),
+<<<<<<< HEAD
         team: canonicalTeam(e.team) || teamForDriver(teams, e.name) || "Unassigned",
+=======
+        team: e.team || teamForDriver(teams, e.name) || "Unassigned",
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
         time: e.lap_time_str || "",
         source: "Race start (lap 0)",
       }));

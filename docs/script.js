@@ -34,6 +34,7 @@ let currentSeason = 1;
 let qualiGapMode = "leader";
 let qualiTimeMode = "lap"; // "lap" | "sectors"
 
+<<<<<<< HEAD
 // Normalizes team names so variants like "Aston Martin 26" or
 // "aston martin" are treated as the same team ("Aston Martin").
 function canonicalTeam(t) {
@@ -99,6 +100,18 @@ function teamFromTelemetry(upperName) {
     _telemetryTeamCacheSize = sessions.length;
   }
   return _telemetryTeamCache[upperName] || "";
+=======
+// Team lookup that tolerates casing differences between the
+// telemetry driver names (UPPERCASE) and manually saved keys.
+function teamForDriver(teams, name) {
+  if (!teams || !name) return "";
+  if (teams[name]) return teams[name];
+  const key = String(name).trim().toUpperCase();
+  for (const k of Object.keys(teams)) {
+    if (String(k).trim().toUpperCase() === key) return teams[k];
+  }
+  return "";
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
 }
 
 // Sector times of a driver's best lap (from the packet session history).
@@ -2664,10 +2677,14 @@ function renderQualiResults() {
       if (lowerTitle.includes("1") && pos > 16) isEliminated = true;
       else if (lowerTitle.includes("2") && pos > 10) isEliminated = true;
 
+<<<<<<< HEAD
       const team =
         teamForDriver(teamsAssigned, res.name) ||
         canonicalTeam(res.team) ||
         "Unassigned";
+=======
+      const team = teamForDriver(teamsAssigned, res.name) || "Unassigned";
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
       const teamColor = teamColorFor(team);
 
       let rowStyle = "";
@@ -3844,7 +3861,13 @@ function createChart(
             : {}),
         },
     grid: {
+<<<<<<< HEAD
       color: "rgba(255, 255, 255, 0.065)",
+=======
+      color: isMobile
+        ? "rgba(255, 255, 255, 0.12)"
+        : "rgba(255, 255, 255, 0.18)",
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
       ...(yAxisOverride.grid && typeof yAxisOverride.grid === "object"
         ? yAxisOverride.grid
         : {}),
@@ -6531,7 +6554,11 @@ function buildStartingGridData() {
       .map((e) => ({
         position: Number(e.position),
         name: String(e.name).toUpperCase(),
+<<<<<<< HEAD
         team: canonicalTeam(e.team) || teamForDriver(teams, e.name) || "Unassigned",
+=======
+        team: e.team || teamForDriver(teams, e.name) || "Unassigned",
+>>>>>>> 1499589cad588d6abc3a08ff12a2d3ad4ad909fa
         time: e.lap_time_str || "",
         source: "Race start (lap 0)",
       }));
